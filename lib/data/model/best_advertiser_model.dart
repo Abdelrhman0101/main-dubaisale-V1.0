@@ -1,0 +1,74 @@
+// في ملف: data/model/best_advertiser_model.dart
+
+class BestAdvertiserAd {
+  final int id; // We will temporarily use the advertiser's ID for the ad.
+  final String make;
+  final String model;
+  final String? trim;
+  final String year;
+  final String km;
+  final String price;
+  final String mainImage;
+  // This will be populated from the parent object
+  final String advertiserName;
+
+  BestAdvertiserAd({
+    required this.id,
+    required this.make,
+    required this.model,
+    this.trim,
+    required this.year,
+    required this.km,
+    required this.price,
+    required this.mainImage,
+    required this.advertiserName,
+  });
+
+  // Factory constructor that needs additional data (advertiser ID and name)
+  factory BestAdvertiserAd.fromJson(Map<String, dynamic> json, {required int advertiserId, required String advertiserName}) {
+    return BestAdvertiserAd(
+      id: json['id'] ?? advertiserId, // Use ad id if available, otherwise fall back to advertiser id
+      make: json['make']?.toString() ?? '',
+      model: json['model']?.toString() ?? '',
+      trim: json['trim']?.toString(),
+      year: json['year']?.toString() ?? 'N/A',
+      km: json['km']?.toString() ?? 'N/A',
+      price: json['price']?.toString() ?? '0',
+      mainImage: json['main_image'] ?? '',
+      advertiserName: advertiserName, // Set from the parent
+    );
+  }
+}
+
+class BestAdvertiser {
+  final int id;
+  final String name;
+  final List<BestAdvertiserAd> ads;
+
+  BestAdvertiser({
+    required this.id,
+    required this.name,
+    required this.ads,
+  });
+
+  factory BestAdvertiser.fromJson(Map<String, dynamic> json) {
+    String advertiserName = json['advertiser_name']?.toString() ?? 'Top Dealer'; // Use a default name if null
+    int advertiserId = json['id'] ?? 0;
+    List<BestAdvertiserAd> parsedAds = [];
+
+    if (json['featured_in'] is List && (json['featured_in'] as List).isNotEmpty) {
+      final featuredData = (json['featured_in'] as List).first;
+      if (featuredData['latest_ads'] is List) {
+        parsedAds = (featuredData['latest_ads'] as List)
+          .map((adJson) => BestAdvertiserAd.fromJson(adJson, advertiserId: advertiserId, advertiserName: advertiserName))
+          .toList();
+      }
+    }
+
+    return BestAdvertiser(
+      id: advertiserId,
+      name: advertiserName,
+      ads: parsedAds,
+    );
+  }
+}

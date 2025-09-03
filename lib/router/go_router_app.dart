@@ -1,0 +1,306 @@
+import 'dart:ui';
+import 'package:advertising_app/data/model/car_rent_model.dart';
+import 'package:advertising_app/data/model/car_sale_model.dart';
+import 'package:advertising_app/data/model/car_service_model.dart';
+import 'package:advertising_app/data/model/electronic_model.dart';
+import 'package:advertising_app/data/model/job_model.dart';
+import 'package:advertising_app/data/model/other_service_model.dart';
+import 'package:advertising_app/data/model/real_estate_model.dart';
+import 'package:advertising_app/data/model/restaurant_model.dart';
+import 'package:advertising_app/presentation/screen/all_add_car_rent.dart';
+import 'package:advertising_app/presentation/screen/all_add_car_sales.dart';
+import 'package:advertising_app/presentation/screen/all_add_car_service.dart';
+import 'package:advertising_app/presentation/screen/all_add_electronic.dart';
+import 'package:advertising_app/presentation/screen/all_add_job.dart';
+import 'package:advertising_app/presentation/screen/all_add_other_service.dart';
+import 'package:advertising_app/presentation/screen/all_add_real_estate.dart';
+import 'package:advertising_app/presentation/screen/all_add_resturant.dart';
+import 'package:advertising_app/presentation/screen/car_rent_ads_screen.dart';
+import 'package:advertising_app/presentation/screen/car_rent_save_ads_screen.dart';
+import 'package:advertising_app/presentation/screen/car_sales_save_ads_screen.dart';
+import 'package:advertising_app/presentation/screen/car_services_ad_screen';
+import 'package:advertising_app/presentation/screen/car_servise_save_ads.dart';
+import 'package:advertising_app/presentation/screen/electronics_ad_screen.dart';
+import 'package:advertising_app/presentation/screen/electronics_save_ad_screen.dart';
+import 'package:advertising_app/presentation/screen/job_save_ads_screen.dart';
+import 'package:advertising_app/presentation/screen/jod_ads_screen.dart';
+import 'package:advertising_app/presentation/screen/other_service_ads_screen.dart';
+import 'package:advertising_app/presentation/screen/other_service_save_ads_screen.dart';
+import 'package:advertising_app/presentation/screen/payment_screen.dart';
+import 'package:advertising_app/presentation/screen/place_an_ad.dart';
+import 'package:advertising_app/presentation/screen/real_estate_ads_screen.dart';
+import 'package:advertising_app/presentation/screen/real_estate_save_ads_screen.dart';
+import 'package:advertising_app/presentation/screen/resturant_ads_screen.dart';
+import 'package:advertising_app/presentation/screen/resturant_save_ads_screen.dart';
+import 'package:advertising_app/router/local_notifier.dart';
+import 'package:advertising_app/presentation/screen/ads_category.dart';
+import 'package:advertising_app/presentation/screen/car_details_screen.dart';
+import 'package:advertising_app/presentation/screen/car_rent_details_screen.dart';
+import 'package:advertising_app/presentation/screen/car_rent_offer_box.dart';
+import 'package:advertising_app/presentation/screen/car_rent_screen.dart';
+import 'package:advertising_app/presentation/screen/car_rent_search_screen.dart';
+import 'package:advertising_app/presentation/screen/car_sales_ads_screen.dart';
+import 'package:advertising_app/presentation/screen/car_sales_search_screen.dart';
+import 'package:advertising_app/presentation/screen/car_service.dart';
+import 'package:advertising_app/presentation/screen/car_service_details.dart';
+import 'package:advertising_app/presentation/screen/car_service_offer_box.dart';
+import 'package:advertising_app/presentation/screen/car_service_search_screen.dart';
+import 'package:advertising_app/presentation/screen/edit_profile.dart';
+import 'package:advertising_app/presentation/screen/electronic_details_screen.dart';
+import 'package:advertising_app/presentation/screen/electronic_offer_box.dart';
+import 'package:advertising_app/presentation/screen/electronic_screen.dart';
+import 'package:advertising_app/presentation/screen/electronic_search_screen.dart';
+import 'package:advertising_app/presentation/screen/email_code.dart';
+import 'package:advertising_app/presentation/screen/email_login_screen.dart';
+import 'package:advertising_app/presentation/screen/email_signup.dart';
+import 'package:advertising_app/presentation/screen/favorite_screen.dart';
+import 'package:advertising_app/presentation/screen/forgot_pass_email.dart';
+import 'package:advertising_app/presentation/screen/forgot_pass_phone.dart';
+import 'package:advertising_app/presentation/screen/car_sales_screen.dart';
+import 'package:advertising_app/presentation/screen/job_details_screen.dart';
+import 'package:advertising_app/presentation/screen/job_offer_box.dart';
+import 'package:advertising_app/presentation/screen/job_screen.dart';
+import 'package:advertising_app/presentation/screen/job_search_screen.dart';
+import 'package:advertising_app/presentation/screen/login_screen.dart';
+import 'package:advertising_app/presentation/screen/manage_screen.dart';
+import 'package:advertising_app/presentation/screen/other_service_search_screen.dart';
+import 'package:advertising_app/presentation/screen/other_services_details_screen.dart';
+import 'package:advertising_app/presentation/screen/real_estate_details_screen.dart';
+import 'package:advertising_app/presentation/screen/real_estate_offer_box.dart';
+import 'package:advertising_app/presentation/screen/car_sales_offers_box_screen.dart';
+import 'package:advertising_app/presentation/screen/other_service.dart';
+import 'package:advertising_app/presentation/screen/other_service_offer_box.dart';
+import 'package:advertising_app/presentation/screen/phone_code.dart';
+import 'package:advertising_app/presentation/screen/post_ad_screen.dart';
+import 'package:advertising_app/presentation/screen/profile_screen.dart';
+import 'package:advertising_app/presentation/screen/real_estate_screen.dart';
+import 'package:advertising_app/presentation/screen/real_estate_search_screen.dart';
+import 'package:advertising_app/presentation/screen/reset_pass.dart';
+import 'package:advertising_app/presentation/screen/restaurant_details_screen.dart';
+import 'package:advertising_app/presentation/screen/restaurant_offer_box.dart';
+import 'package:advertising_app/presentation/screen/restaurant_search_screen.dart';
+import 'package:advertising_app/presentation/screen/restaurants_screen.dart';
+import 'package:advertising_app/presentation/screen/setting_screen.dart';
+import 'package:advertising_app/presentation/screen/sinup_screen.dart';
+import 'package:advertising_app/presentation/screen/splash_screen.dart';
+import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
+import 'package:advertising_app/presentation/providers/auth_repository.dart';
+
+// دالة للتحقق من الصفحات العامة التي لا تحتاج تسجيل دخول
+bool _isPublicRoute(String location) {
+  final publicRoutes = [
+    '/', // شاشة Splash
+    '/login',
+    '/signup',
+    '/emaillogin',
+    '/emailsignup',
+    '/passphonelogin',
+    '/forgetpassemail',
+    '/phonecode',
+    '/emailcode',
+    '/resetpass',
+  ];
+  return publicRoutes.contains(location);
+}
+
+GoRouter createRouter({
+  required LocaleChangeNotifier notifier,
+}) {
+  // دالة مساعدة لتغيير اللغة بالطريقة الجديدة
+  void changeLocale(BuildContext context, Locale locale) {
+    Provider.of<LocaleChangeNotifier>(context, listen: false).changeLocale(locale);
+  }
+
+  return GoRouter(
+    refreshListenable: notifier,
+    initialLocation: '/', // المسار الأولي يبدأ من Splash
+    redirect: (context, state) async {
+      // التحقق من الجلسة المخزنة
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final hasValidSession = await authProvider.checkStoredSession();
+      
+      // إذا كان المستخدم في صفحة تسجيل الدخول وله جلسة صالحة، وجهه للصفحة الرئيسية
+      if (hasValidSession && (state.matchedLocation == '/login' || state.matchedLocation == '/' || state.matchedLocation == '/emaillogin' || state.matchedLocation == '/signup' || state.matchedLocation == '/emailsignup')) {
+        return '/home';
+      }
+      
+      // إذا لم تكن له جلسة صالحة وهو في صفحة محمية، وجهه لتسجيل الدخول
+      if (!hasValidSession && !_isPublicRoute(state.matchedLocation)) {
+        return '/login';
+      }
+      
+      return null; // لا تغيير في المسار
+    },
+    routes: [
+      // شاشة Splash
+      GoRoute(path: '/', builder: (context, state) => SplashGridScreen()),
+      
+      // +++ الشاشات القديمة التي تتوقع 'notifier' مباشرة +++
+      GoRoute(path: '/login', builder: (context, state) => LoginScreen(notifier: notifier, onLanguageChange: (locale) {  },)),
+      GoRoute(path: '/signup', builder: (context, state) => SignUpScreen(notifier: notifier, onLanguageChange: (locale) {  },)),
+      GoRoute(path: '/emaillogin', builder: (context, state) => EmailLoginScreen(notifier: notifier)),
+      GoRoute(path: '/emailsignup', builder: (context, state) => EmailSignUpScreen(notifier: notifier)),
+      GoRoute(path: '/passphonelogin', builder: (context, state) => ForgotPassPhone(notifier: notifier)),
+      GoRoute(path: '/forgetpassemail', builder: (context, state) => ForgotPassEmail(notifier: notifier)),
+      GoRoute(path: '/phonecode', builder: (context, state) => VerifyPhoneCode(notifier: notifier)),
+      GoRoute(path: '/emailcode', builder: (context, state) => VerifyEmailCode(notifier: notifier)),
+      GoRoute(path: '/resetpass', builder: (context, state) => ResetPassword(notifier: notifier)),
+      GoRoute(path: '/setting', builder: (context, state) => SettingScreen(notifier: notifier)),
+
+      // +++ الشاشات التي لا تحتاج إلى تغيير اللغة +++
+      GoRoute(path: '/home', builder: (context, state) => HomeScreen()),
+      GoRoute(path: '/favorite', builder: (context, state) => FavoriteScreen()),
+      GoRoute(path: '/postad', builder: (context, state) => PostAdScreen()),
+     GoRoute(path: '/profile', builder: (context, state) => ProfileScreen()),
+      GoRoute(path: '/editprofile', builder: (context, state) => EditProfile()),
+       GoRoute(
+        // استخدمنا هنا المسار الرئيسي الصحيح
+        path: '/cars-sales',
+        builder: (context, state) {
+          // نقرأ الفلاتر القادمة من HomeScreen كـ 'extra'
+          final filters = state.extra as Map<String, String>?;
+          
+          // نمرر هذه الفلاتر إلى CarSalesScreen
+          return CarSalesScreen(initialFilters: filters);
+        },
+      ), 
+       GoRoute(
+        // المسار الآن يقبل ID متغيرًا
+        path: '/car-details/:adId',
+        builder: (context, state) {
+          // نقرأ الـ ID من المسار
+          final adId = int.tryParse(state.pathParameters['adId'] ?? '') ?? 0;
+          
+          // نمرر الـ ID فقط إلى الشاشة
+          return CarDetailsScreen(adId: adId);
+        },
+      ),
+      
+      
+      
+      // ... (بقية المسارات التي لا تحتاج تغيير اللغة)
+       GoRoute(path: '/real-details', builder: (context, state) => RealEstateDetailsScreen(real_estate: state.extra as RealEstateModel )),
+       GoRoute(path: '/electronic-details', builder: (context, state) => ElectronicDetailsScreen(electronic: state.extra as ElectronicModel )),
+       GoRoute(path: '/job-details', builder: (context, state) => JobDetailsScreen (job: state.extra as JobModel )),
+       GoRoute(path: '/car-rent-details', builder: (context, state) => CarRentDetailsScreen (car_rent: state.extra as CarRentModel )),
+       GoRoute(path: '/car-service-details', builder: (context, state) => CarServiceDetails (car_service: state.extra as CarServiceModel )),
+       GoRoute(path: '/restaurant-details', builder: (context, state) => RestaurantDetailsScreen (restaurant: state.extra as RestaurantModel )),
+       GoRoute(path: '/other_service-details', builder: (context, state) => OtherServicesDetailsScreen (other_service: state.extra as OtherServiceModel )),
+       GoRoute(path: '/offer_box', builder: (context, state) => OffersBoxScreen()),
+       GoRoute(path: '/car_rent', builder: (context, state) => CarRentScreen()),
+       GoRoute(path: '/realEstate', builder: (context, state) => RealEstateScreen()),
+       GoRoute(path: '/electronics', builder: (context, state) => ElectronicScreen()),
+       GoRoute(path: '/jobs', builder: (context, state) => JobScreen()),
+       GoRoute(path: '/carServices', builder: (context, state) => CarService()),
+       GoRoute(path: '/restaurants', builder: (context, state) => RestaurantsScreen()),
+       GoRoute(path: '/otherServices', builder: (context, state) => OtherServiceScreen()),
+       GoRoute(path: '/realestateofeerbox', builder: (context, state) => RealEstateOfeerBOX()),
+       GoRoute(path: '/electronicofferbox', builder: (context, state) => ElectronicOfferBox()),
+       GoRoute(path: '/jobofferbox', builder: (context, state) => JobOfferBox()),
+       GoRoute(path: '/carrentofferbox', builder: (context, state) => CarRentOfferBox()),
+       GoRoute(path: '/carservicetofferbox', builder: (context, state) => CarServiceOfferBox()),
+       GoRoute(path: '/restaurant_offerbox', builder: (context, state) => RestaurantOfferBox()),
+       GoRoute(path: '/other_service_offer_box', builder: (context, state) => OtherServiceOfferBox()),
+       GoRoute(path: '/real_estate_search', builder: (context, state) => RealEstateSearchScreen()),
+       GoRoute(path: '/electronic_search', builder: (context, state) => ElectronicSearchScreen()),
+       GoRoute(path: '/car_rent_search', builder: (context, state) => CarRentSearchScreen()),
+       GoRoute(path: '/car_service_search', builder: (context, state) => CarServiceSearchScreen()),
+       GoRoute(path: '/restaurant_search', builder: (context, state) => RestaurantSearchScreen()),
+       GoRoute(path: '/other_service_search', builder: (context, state) => OtherServiceSearchScreen()),
+       GoRoute(path: '/job_search', builder: (context, state) => JobSearchScreen()),
+       GoRoute(path: '/ads_category', builder: (context, state) => AdsCategoryScreen()),
+       GoRoute(path: '/placeAnAd', builder: (context, state) => PlaceAnAd()),
+       GoRoute(path: '/all_ad_car_sales', builder: (context, state) => AllAdCarSales()),
+       GoRoute(path: '/all_ad_car_rent', builder: (context, state) =>  AllAdCarRent()),
+       GoRoute(path: '/AllAdsRealEstate', builder: (context, state) =>  AllAdsRealEstate()),
+       GoRoute(path: '/AllAddsElectronic', builder: (context, state) =>   AllAddsElectronic()),
+       GoRoute(path: '/all_add_job', builder: (context, state) =>   AllAddsJob()),
+       GoRoute(path: '/AllAddsCarService', builder: (context, state) =>   AllAddsCarService()),
+       GoRoute(path: '/AllAddsRestaurant', builder: (context, state) =>   AllAddsRestaurant()),
+       GoRoute(path: '/all_add_other_service', builder: (context, state) =>   AllAddsOtherService()),
+
+
+      // +++ الشاشات الجديدة التي تستخدم 'onLanguageChange' بالطريقة الصحيحة +++
+      GoRoute(
+        path: '/manage',
+        builder: (context, state) => ManageScreen(onLanguageChange: (locale) => changeLocale(context, locale)),
+      ),
+      GoRoute(
+        path: '/car_sales_ads',
+        builder: (context, state) => CarSalesAdScreen(onLanguageChange: (locale) => changeLocale(context, locale)),
+      ),
+      GoRoute(
+        path: '/car_sales_save_ads/:adId',
+        builder: (context, state) {
+          final adId = int.tryParse(state.pathParameters['adId'] ?? '') ?? 0;
+          return CarSalesSaveAdScreen(
+            adId: adId,
+            onLanguageChange: (locale) => changeLocale(context, locale),
+          );
+        },
+      ),
+      GoRoute(
+        path: '/car_services_ads',
+        builder: (context, state) => CarServicesAdScreen(onLanguageChange: (locale) => changeLocale(context, locale)),
+      ),
+      GoRoute(
+        path: '/car_services_save_ads',
+        builder: (context, state) => CarServicesSaveAdScreen(onLanguageChange: (locale) => changeLocale(context, locale)),
+      ),
+      GoRoute(
+        path: '/real_estate_ads',
+        builder: (context, state) => RealEstateAdScreen(onLanguageChange: (locale) => changeLocale(context, locale)),
+      ),
+       GoRoute(
+        path: '/real_estate_save_ads',
+        builder: (context, state) => RealEstateSaveAdScreen(onLanguageChange: (locale) => changeLocale(context, locale)),
+      ),
+       GoRoute(
+        path: '/electronics_ads',
+        builder: (context, state) => ElectronicsAdScreen(onLanguageChange: (locale) => changeLocale(context, locale)),
+      ),
+       GoRoute(
+        path: '/electronics_save_ads',
+        builder: (context, state) => ElectronicsSaveAdScreen(onLanguageChange: (locale) => changeLocale(context, locale)),
+      ),
+      GoRoute(
+        path: '/car_rent_ads',
+        builder: (context, state) => CarsRentAdScreen(onLanguageChange: (locale) => changeLocale(context, locale)),
+      ),
+       GoRoute(
+        path: '/car_rent_save_ads',
+        builder: (context, state) => CarsRentSaveAdScreen(onLanguageChange: (locale) => changeLocale(context, locale)),
+      ),
+       GoRoute(
+        path: '/resturant_ads',
+        builder: (context, state) => RestaurantsAdScreen(onLanguageChange: (locale) => changeLocale(context, locale)),
+      ),
+       GoRoute(
+        path: '/resturant_save_ads',
+        builder: (context, state) => RestaurantsSaveAdScreen(onLanguageChange: (locale) => changeLocale(context, locale)),
+      ),
+       GoRoute(
+        path: '/other_servics_ads',
+        builder: (context, state) => OtherServicesAdScreen(onLanguageChange: (locale) => changeLocale(context, locale)),
+      ),
+       GoRoute(
+        path: '/other_service_save_ads',
+        builder: (context, state) => OtherServicesSaveAdScreen(onLanguageChange: (locale) => changeLocale(context, locale)),
+      ),
+      GoRoute(
+        path: '/job_ads',
+        builder: (context, state) => JobsAdScreen(onLanguageChange: (locale) => changeLocale(context, locale)),
+      ),
+      GoRoute(
+        path: '/job_save_ads',
+        builder: (context, state) => JobsSaveAdScreen(onLanguageChange: (locale) => changeLocale(context, locale)),
+      ),
+      GoRoute(
+        path: '/payment',
+        builder: (context, state) => PaymentScreen(onLanguageChange: (locale) => changeLocale(context, locale)),
+      ),
+    ],
+  );
+}

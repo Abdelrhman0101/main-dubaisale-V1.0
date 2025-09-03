@@ -1,0 +1,338 @@
+{
+  "signUp": "Sign Up",
+  "userName": "User Name",
+  "phone": "Phone",
+  "phoneNumberHint": "508236561",
+  "password": "Password",
+  "referralCode": "Referral Code",
+  "agreeTerms": "I Agree Terms & Conditions",
+  "register": "Register",
+  "or": "Or",
+  "guestLogin": "Guest Login",
+  "emailSignUp": "Email Sign Up",
+  "login": "Log In",
+  "haveAccount": "Already Have An Account?",
+  "forgotPassword": "Forgot Password?",
+  "emailLogin": "Email Login",
+  "dontHaveAccount": "Don't Have An Account?",
+  "createAccount": "Create Account",
+   "phonesignup":"phone sign Up",
+   
+  "english":"عربي",
+  "arabic":"English",
+  
+  "phoneLogin":"Phone Login",
+  "myProfile": "My Profile",
+  "createAgentCode": "Create Agent Code",
+  "notifications": "Notifications",
+  "language": "Language",
+  "contactUs": "Contact Us",
+  "termsAndConditions": "Terms & Conditions",
+  "supportCenter": "Support Center",
+  "privacySecurity": "Privacy & Security",
+  "logout": "Logout",
+  
+  "whatsApp": "WhatsApp",
+  "email": "Email",
+  "advertiserName": "Advertiser Name",
+  "advertiserType": "Advertiser Type",
+  "advertiserLogo": "Advertiser Logo",
+  "uploadYourLogo": "Upload Your Logo",
+  "advertiserLocation": "Advertiser Location",
+  "address": "Address",
+  "locateMe": "Locate Me",
+  "save": "Save",
+  "cancel":"Cancel",
+  "optional":"optional",
+
+  "premium": "Premium",
+  "price": "Price",
+  "location": "Location",
+  "placeName": "Al Manara Motors",
+  "date": "Date: {date}",
+  "priceOnly": "{price}",
+
+  "back":"Back",
+
+  "forgetyourpass":"Forgot Your Password?",
+  "enterphone":"Enter Your phone",
+  "sendcode":"Send Code",
+  "enteremail":"Enter Your Email",
+
+  "verifnum":"Verify Your Number",
+  "phoneverify":"We've sent an SMS with an activation code to your phone",
+  "emilverify":"We've sent an Email with an activation code to your Email yourname@example.Com ",
+  
+  "verify":"Verify",
+
+  "resetpass":"Reset Password",
+  "newpass":"New password",
+  "confirmpass":"Confirm Password",
+  "confirm":"Confirm",
+
+   "favorites":"Favorites",
+
+
+  "carsales":"Car Sales",
+  "realestate": "Real Estate",
+  "electronics": "Electronics & Home \n Appliances",
+  "jobs": "Jobs",
+  "carrent": "Car Rent",
+  "carservices": "Car Services",
+  "restaurants": "Restaurants",
+  "otherservices": "Other Services",
+
+  "home":"Home",
+  "srtting":"Settings",
+  "manage":"Manage",
+  "post":"Place An Ad",
+
+  "editprof4":"Edit my Profile",
+  "editing1":"Editing",
+  "editit2" :"Do you want to edit your profile",
+  "edit3": "Edit",
+
+  "discover_best_cars_deals": "Discover Best Cars Deals",
+  "choose_make": "Choose Make",
+  "choose_model": "Choose Model",
+  "search": "Search",
+  "click_for_amazing_daily_cars_deals": "Click For Amazing Daily Cars Deals",
+  "top_premium_dealers": "Top Premium Dealers",
+  "see_all_ads": "See All Ads",
+  "smart_search": "Smart Search",
+
+  "km": "Km",
+  "year": "Year",
+  "trim": "Trim",
+  "sort": "Sort By The Nearest",
+  "ad": "ADS NO:",
+
+  "car_details": "Car Details",
+  "car_type": "Car Type",
+  "trans_type": "Trans Type",
+  "color": "Color",
+  "interior_color": "Interior Color",
+  "fuel_type": "Fuel Type",
+  "warranty": "Warranty",
+  "doors_no": "Doors No",
+  "seats_no": "Seats No",
+  "engine_capacity": "Engine Capacity",
+  "cylinders": "Cylinders",
+  "horse_power": "Horse Power",
+  "steering_side": "Steering Side",
+  "description": "Description",
+
+ 
+"agent": "Agent",
+"view_all_ads": "View All Ads",
+"report_this_ad": "Report This Ad",
+"use_this_space_for_ads": "Contact us To Use This Space For Your Ads",
+
+
+"priority_first_premium": "🌟 Top Premium Ads",
+"priority_premium": "💎 Premium Ads",
+"priority_featured": "🚀 Featured Ads",
+"priority_free": "📢 Free Ads",
+
+"add_to_favorite": "Add to Favorite",
+"confirm_add_to_favorite": "Do you want to add this item to favorites?",
+"yes": "Yes",
+"added_to_favorite": "Item added to favorites",
+"remove_from_favorite":"remove from favorite",
+"confirm_remove_from_favorite":"confirm remove from favorite",
+
+"invisibleInfo": "When enabled, others won’t know that you viewed their ad or interacted with it.",
+"invisibleTitle": "Invisible Browsing",
+"invisibleInfoTitle": "What is Invisible?",
+"ok":"Ok",
+
+"discover_deals": "Discover Best Rental Deals",
+"click_for_deals": "Click For Amazing Daily Rental Deals",
+
+
+"discover_real_estate": "Discover Best Properties Deals",
+  "emirate": "Emirate",
+  "district": "District",
+  "property_type": "Property Type",
+  "contract_type": "Contract Type",
+ "click_for_deals_real_estate": "Click For Amazing Properties Deals",
+
+
+  "discover_elect": "Discover Best Electronics & Appliances",
+  "section_type": "Section Type",
+
+  "section": "Section ",
+  "product":"Product",
+  "electronics2": "Electronics &",
+   "electronics3": "Home  Appliances",
+   "category": "Category ",
+    "type":"Type",
+    "contract": "Contract",
+    "service":"Service",
+
+  "click_for_deals_elect": "Click For Amazing Electronics & Home Appliances Deals",
+
+  "category_type": "Category Type",
+  "click_for_deals_job": "Click For Amazing Job Offers",
+  "discover_best_job":"Discover Best Job Offers",
+
+  "service_type": "Service name",
+  "click_for_deals_car_service": "Click For Amazing  Cars Services Deals",
+  "discover_car_service":"Discover Best Cars Services Deals",
+
+
+  "district_choose": "District",
+  
+  "click_daily_offers": "Click For Amazing Daily Offers",
+  "discover_restaurants_offers":"Discover Best Restaurants Offers",
+
+
+   "click_daily_servir_offers": "Click For Amazing Services Offers",
+  "discover_service_offers":"Discover Best Services Offers",
+
+
+
+
+  
+  "place_an_ad": "Place An Ad",
+  "featured": "Featured",
+  "free": "Free",
+  "appearance_top": "Appearance On Top Of Search List",
+  "appearance_nearest": "Appearance For The Nearest Viewers",
+  "appearance_after_star": "Appearance After Premium",
+  "appearance_after_premium": "Appearance After Premium Ads",
+  "appearance_after_featured": "Appearance After Featured Ads",
+  "daily_refresh": "Enabled Daily Refresh",
+  "cost": "Cost",
+  "for_days": "For [{days}] Days",
+  "submit": "Submit",
+  "top_of_day_note": "Top Of The Day Comes First On The Search List",
+
+
+
+  "appTitle": "Cars Sales Ads",
+  "toggleLang": "العربية",
+  "make": "Make",
+  "model": "Model",
+ 
+  "specs": "Specs",
+  "title": "Title",
+  "carType": "Car Type",
+  "transType": "Trans Type",
+  "fuelType": "Fuel Type",
+  
+  "interiorColor": "Interior Color",
+ 
+  "engineCapacity": "Engine Capacity",
+ 
+  "horsePower": "Horse Power",
+  "doorsNo": "Doors No",
+  "seatsNo": "Seats No",
+  "steeringSide": "Steering Side", 
+  "add": "Add",
+  "phoneNumber": "Phone Number",
+ 
+  "area": "Area",
+  "describeYourCar": "Describe Your Car",
+  "translate": "Translate",
+  "addMainImage": "Add Main Image",
+  "add14Images": "Add 14 Images",
+  
+  "next": "Next",
+
+  "carsServicesAds": "Cars Services Ads",
+   
+    "serviceType": "Service Type",
+    "serviceName": "Service Name",
+    "add3Images": "Add 3 Images",
+   
+
+
+
+    "realEstateAds": "Real Estate Ads",
+    "contractType": "Contract Type",
+    "propertyType": "Property Type",
+    "add9Images": "Add 9 Images",
+
+    "electronicsAndHomeAppliancesAds": "Electronics & Home Appliances Ads",
+    "productName": "Product Name",
+    "sectionType": "Section Type",
+    "add4Images": "Add 4 Images",
+
+    "carsRentAds": "Cars Rent Ads",
+    "dayRent": "Day Rent",
+    "monthRent": "Month Rent",
+    "add10Images": "Add 10 Images",
+
+    "restaurantsAds": "Restaurants Ads",
+    "otherServicesAds": "Other Services Ads",
+
+    "jobsAds": "Jobs Ads",
+    "categoryType": "Category Type",
+    "jobName": "Job Name",
+    "salary": "Salary",
+
+
+    "valid": "Valid",
+    "pending": "Pending",
+    "expired": "Expired",
+    "rejected": "Rejected",
+    "postDate": "Post Date",
+    "expiresIn": "Expires In",
+    "views": "Search & Views",
+    "refresh": "Refresh",
+    "edit": "Edit",
+    "renew": "Renew",
+    "upgrade": "Upgrade",
+    "adsType": "ADS Type",
+    "totalAds": "Total ADS",
+    "manageAds": "Manage Ads",
+    "all": "All", 
+    "balance": "Balance",  
+    "contractExpire": "Contract Expire (use Ads before) Date",
+    "amount": "Amount",
+    "days": "Days", 
+    "activeOffersBox": "Active Offers Box",
+    "pay":"Pay",
+
+    "payment": "Payment",
+    "total": "Total",
+    "payWithCreditCard": "Pay With Credit Card",
+    "cardNumber": "Card Number",
+    "expireDate": "Expire Date",
+    "cvv": "CVV",
+    "cardHolderName": "Card Holder Name",
+    "payNow": "Pay Now",
+    
+
+   "Optional":"Optional",
+
+  "noResultsFound":"No Results Found",
+  "addNew":"Add New",
+
+   "to":"To",
+   "any":"Any",
+   "apply":"Apply",
+   "from":"From",
+   "reset":"Reset",
+   "chooseAnOption":"Choose An Option",
+   "passwordTooShort":"Password Too Short",
+   "passwordsDoNotMatch":"Passwords Don`t Match",
+   "accountCreatedSuccessfully":"Account Created Successfully",
+   "agreeTermsValidation":"Agree Terms Validation",
+   "unknownError":"unknown Error",
+   "pleaseEnterValidEmail":"please Enter Valid Email",
+   "pleaseEnterPhone":"please Enter Phone",
+   "pleaseEnterUsername":"please Enter Username",
+   "searchCountry":"search Country",
+   "pleaseConfirmPassword":"please Confirm Password",
+   "no":"no",
+   "read_more":"read more",
+   "show_less":"show_less",
+   "loading":"loading",
+   "delete":"delete",
+   "please_select_make":"please_select_make",
+   "please_fill_required_fields":"please_fill_required_fields"
+   
+
+}
