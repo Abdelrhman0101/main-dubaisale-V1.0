@@ -1,9 +1,9 @@
 import 'package:advertising_app/data/model/my_ad_model.dart';
 import 'package:advertising_app/data/web_services/api_service.dart';
 
-class MyAdsRepository {
+class ManageAdsRepository {
   final ApiService _apiService;
-  MyAdsRepository(this._apiService);
+  ManageAdsRepository(this._apiService);
 
   Future<MyAdsResponse> getMyAds({required String token}) async {
     // يمكن إضافة query parameters هنا إذا احتجت للـ pagination

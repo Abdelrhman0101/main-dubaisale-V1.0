@@ -19,7 +19,7 @@ import 'package:advertising_app/utils/number_formatter.dart';
 import 'package:advertising_app/constant/string.dart';
 import 'package:advertising_app/constant/image_url_helper.dart';
 import 'package:advertising_app/data/web_services/location_service.dart';
-import 'package:geolocator/geolocator.dart';
+// import 'package:geolocator/geolocator.dart'; // Temporarily disabled
 import 'package:geocoding/geocoding.dart';
 
 import 'package:advertising_app/utils/phone_number_formatter.dart';
@@ -44,9 +44,9 @@ class _CarSalesScreenState extends State<CarSalesScreen> with AutomaticKeepAlive
   Timer? _debounce;
   bool _isMapSortActive = false;
   final LocationService _locationService = LocationService();
-  Position? _currentPosition;
+  // Position? _currentPosition; // Temporarily disabled
   bool _isGettingLocation = false;
-  Map<String, Position> _adLocationCache = {};
+  // Map<String, Position> _adLocationCache = {}; // Temporarily disabled
   
   @override
   bool get wantKeepAlive => true;
@@ -133,7 +133,11 @@ class _CarSalesScreenState extends State<CarSalesScreen> with AutomaticKeepAlive
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               GestureDetector(
-                                onTap: () => context.pop(),
+                                onTap: () {
+                                  // مسح جميع الفلاتر قبل الرجوع
+                                  context.read<CarAdProvider>().clearAllFilters();
+                                  context.pop();
+                                },
                                 child: Row(
                                   children: [
                                     Icon(Icons.arrow_back_ios, color: KTextColor, size: 17.sp),
@@ -169,7 +173,37 @@ class _CarSalesScreenState extends State<CarSalesScreen> with AutomaticKeepAlive
                           child: _buildSortBar(s, allAds.length),
                         ),
                         SizedBox(height: 5.h),
-                        ...allAds.map(_buildCard).toList(),
+                        // تقسيم الإعلانات حسب الأولوية
+                        ...(() {
+                          final premiumStarAds = allAds.where((ad) => AdCardItemAdapter(ad).priority == AdPriority.PremiumStar).toList();
+                          final premiumAds = allAds.where((ad) => AdCardItemAdapter(ad).priority == AdPriority.premium).toList();
+                          final featuredAds = allAds.where((ad) => AdCardItemAdapter(ad).priority == AdPriority.featured).toList();
+                          final freeAds = allAds.where((ad) => AdCardItemAdapter(ad).priority == AdPriority.free).toList();
+                          
+                          List<Widget> widgets = [];
+                          
+                          if (premiumStarAds.isNotEmpty) {
+                            widgets.add(_buildSectionTitle(s.priority_first_premium));
+                            widgets.addAll(premiumStarAds.map(_buildCard).toList());
+                          }
+                          
+                          if (premiumAds.isNotEmpty) {
+                            widgets.add(_buildSectionTitle(s.priority_premium));
+                            widgets.addAll(premiumAds.map(_buildCard).toList());
+                          }
+                          
+                          if (featuredAds.isNotEmpty) {
+                            widgets.add(_buildSectionTitle(s.priority_featured));
+                            widgets.addAll(featuredAds.map(_buildCard).toList());
+                          }
+                          
+                          if (freeAds.isNotEmpty) {
+                            widgets.add(_buildSectionTitle(s.priority_free));
+                            widgets.addAll(freeAds.map(_buildCard).toList());
+                          }
+                          
+                          return widgets;
+                        })(),
                         if (provider.isLoadingAds && allAds.isEmpty)
                           const Center(child: Padding(
                             padding: EdgeInsets.all(20.0),
@@ -205,7 +239,11 @@ class _CarSalesScreenState extends State<CarSalesScreen> with AutomaticKeepAlive
                       child: Column(
                         children: [
                           GestureDetector(
-                            onTap: () => context.pop(),
+                            onTap: () {
+                              // مسح جميع الفلاتر قبل الرجوع
+                              context.read<CarAdProvider>().clearAllFilters();
+                              context.pop();
+                            },
                             child: Row(
                               children: [
                                 Icon(Icons.arrow_back_ios, color: KTextColor, size: 17.sp),
@@ -318,7 +356,21 @@ class _CarSalesScreenState extends State<CarSalesScreen> with AutomaticKeepAlive
   //     ),
   //   );
   // }
- 
+
+  Widget _buildSectionTitle(String title) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 18.0, vertical: 8.0),
+      child: Text(
+        title,
+        style: TextStyle(
+          fontSize: 18.sp,
+          fontWeight: FontWeight.bold,
+          color: KTextColor,
+        ),
+      ),
+    );
+  }
+
   Widget _buildCard(CarAdModel item) {
       if (kDebugMode) {
       // print("Building card for Ad: ${item.title} - Plan Type: ${item.planType}");

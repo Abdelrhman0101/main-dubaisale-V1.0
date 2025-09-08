@@ -9,7 +9,7 @@ class ApiService {
 
   ApiService() : _dio = Dio(
     BaseOptions(
-      baseUrl:'https://dubaisale.app',
+      baseUrl: baseUrl,
       receiveDataWhenStatusError: true,
       connectTimeout: const Duration(milliseconds: 20000),
       receiveTimeout: const Duration(milliseconds: 20000),
@@ -80,9 +80,27 @@ class ApiService {
     }
 
     try {
+      print('=== API REQUEST DEBUG ===');
+      print('Endpoint: $endpoint');
+      print('FormData fields: ${formData.fields.map((e) => '${e.key}: ${e.value}').join(', ')}');
+      print('FormData files: ${formData.files.map((e) => e.key).join(', ')}');
+      print('========================');
+      
       final response = await _dio.post(endpoint, data: formData);
+      
+      print('=== API RESPONSE DEBUG ===');
+      print('Status Code: ${response.statusCode}');
+      print('Response Data: ${response.data}');
+      print('=========================');
+      
       return response.data;
     } on DioException catch (e) {
+      print('=== API ERROR DEBUG ===');
+      print('Error Type: ${e.type}');
+      print('Error Message: ${e.message}');
+      print('Response Status: ${e.response?.statusCode}');
+      print('Response Data: ${e.response?.data}');
+      print('======================');
       throw ErrorHandler.handleDioError(e);
     }
   }

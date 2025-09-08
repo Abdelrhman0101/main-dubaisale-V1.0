@@ -1,4 +1,5 @@
 import 'dart:ui';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:advertising_app/data/model/car_rent_model.dart';
 import 'package:advertising_app/data/model/car_sale_model.dart';
 import 'package:advertising_app/data/model/car_service_model.dart';
@@ -46,6 +47,7 @@ import 'package:advertising_app/presentation/screen/car_service_details.dart';
 import 'package:advertising_app/presentation/screen/car_service_offer_box.dart';
 import 'package:advertising_app/presentation/screen/car_service_search_screen.dart';
 import 'package:advertising_app/presentation/screen/edit_profile.dart';
+import 'package:advertising_app/presentation/screen/location_picker_screen.dart';
 import 'package:advertising_app/presentation/screen/electronic_details_screen.dart';
 import 'package:advertising_app/presentation/screen/electronic_offer_box.dart';
 import 'package:advertising_app/presentation/screen/electronic_screen.dart';
@@ -87,6 +89,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:advertising_app/presentation/providers/auth_repository.dart';
+import 'package:advertising_app/presentation/screen/location_picker_screen.dart';
 
 // دالة للتحقق من الصفحات العامة التي لا تحتاج تسجيل دخول
 bool _isPublicRoute(String location) {
@@ -211,7 +214,10 @@ GoRouter createRouter({
        GoRoute(path: '/other_service_search', builder: (context, state) => OtherServiceSearchScreen()),
        GoRoute(path: '/job_search', builder: (context, state) => JobSearchScreen()),
        GoRoute(path: '/ads_category', builder: (context, state) => AdsCategoryScreen()),
-       GoRoute(path: '/placeAnAd', builder: (context, state) => PlaceAnAd()),
+       GoRoute(path: '/placeAnAd', builder: (context, state) {
+         final adData = state.extra as Map<String, dynamic>?;
+         return PlaceAnAd(adData: adData);
+       }),
        GoRoute(path: '/all_ad_car_sales', builder: (context, state) => AllAdCarSales()),
        GoRoute(path: '/all_ad_car_rent', builder: (context, state) =>  AllAdCarRent()),
        GoRoute(path: '/AllAdsRealEstate', builder: (context, state) =>  AllAdsRealEstate()),
@@ -229,7 +235,26 @@ GoRouter createRouter({
       ),
       GoRoute(
         path: '/car_sales_ads',
-        builder: (context, state) => CarSalesAdScreen(onLanguageChange: (locale) => changeLocale(context, locale)),
+        builder: (context, state) {
+          final location = state.uri.queryParameters['location'];
+          final latStr = state.uri.queryParameters['lat'];
+          final lngStr = state.uri.queryParameters['lng'];
+          
+          double? latitude;
+          double? longitude;
+          
+          if (latStr != null && lngStr != null) {
+            latitude = double.tryParse(latStr);
+            longitude = double.tryParse(lngStr);
+          }
+          
+          return CarSalesAdScreen(
+            onLanguageChange: (locale) => changeLocale(context, locale),
+            initialLocation: location,
+            initialLatitude: latitude,
+            initialLongitude: longitude,
+          );
+        },
       ),
       GoRoute(
         path: '/car_sales_save_ads/:adId',
@@ -238,6 +263,28 @@ GoRouter createRouter({
           return CarSalesSaveAdScreen(
             adId: adId,
             onLanguageChange: (locale) => changeLocale(context, locale),
+          );
+        },
+      ),
+      GoRoute(
+        path: '/location_picker',
+        builder: (context, state) {
+          final latStr = state.uri.queryParameters['lat'];
+          final lngStr = state.uri.queryParameters['lng'];
+          final address = state.uri.queryParameters['address'];
+          
+          LatLng? initialLocation;
+          if (latStr != null && lngStr != null) {
+            final lat = double.tryParse(latStr);
+            final lng = double.tryParse(lngStr);
+            if (lat != null && lng != null) {
+              initialLocation = LatLng(lat, lng);
+            }
+          }
+          
+          return LocationPickerScreen(
+            initialLocation: initialLocation,
+            initialAddress: address,
           );
         },
       ),

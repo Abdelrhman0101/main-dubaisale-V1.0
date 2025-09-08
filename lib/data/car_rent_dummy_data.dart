@@ -2,6 +2,8 @@ import 'package:advertising_app/data/model/ad_priority.dart';
 import 'package:advertising_app/data/model/car_rent_model.dart';
 import 'package:advertising_app/data/model/offer_box_model.dart';
 
+import 'model/car_rent_model.dart';
+
 final List<CarRentModel> CarRentDummyData = [
   CarRentModel(
     image: 'assets/images/car.jpg',

@@ -575,9 +575,9 @@ class S {
     return Intl.message('Manage', name: 'manage', desc: '', args: []);
   }
 
-  /// `Place An Ad`
+  /// `Posting`
   String get post {
-    return Intl.message('Place An Ad', name: 'post', desc: '', args: []);
+    return Intl.message('Posting', name: 'post', desc: '', args: []);
   }
 
   /// `Edit my Profile`
@@ -1973,6 +1973,46 @@ class S {
   /// `no`
   String get no {
     return Intl.message('no', name: 'no', desc: '', args: []);
+  }
+
+  /// `read more`
+  String get read_more {
+    return Intl.message('read more', name: 'read_more', desc: '', args: []);
+  }
+
+  /// `show_less`
+  String get show_less {
+    return Intl.message('show_less', name: 'show_less', desc: '', args: []);
+  }
+
+  /// `loading`
+  String get loading {
+    return Intl.message('loading', name: 'loading', desc: '', args: []);
+  }
+
+  /// `delete`
+  String get delete {
+    return Intl.message('delete', name: 'delete', desc: '', args: []);
+  }
+
+  /// `please_select_make`
+  String get please_select_make {
+    return Intl.message(
+      'please_select_make',
+      name: 'please_select_make',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `please_fill_required_fields`
+  String get please_fill_required_fields {
+    return Intl.message(
+      'please_fill_required_fields',
+      name: 'please_fill_required_fields',
+      desc: '',
+      args: [],
+    );
   }
 }
 

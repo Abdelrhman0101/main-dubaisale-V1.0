@@ -1,16 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:location/location.dart';
-import 'package:geolocator/geolocator.dart';
+// import 'package:geolocator/geolocator.dart'; // Temporarily disabled
 import '../../data/web_services/google_maps_service.dart';
 import '../../data/web_services/location_service.dart';
 
 class GoogleMapsProvider extends ChangeNotifier {
-  final GoogleMapsService _mapsService = GoogleMapsService();
+  final GoogleMapsService _mapsService;
   final LocationService _locationService = LocationService();
-  
+
+  GoogleMapsProvider(this._mapsService);
+
   GoogleMapController? _mapController;
-  Position? _currentPosition;
+  // Position? _currentPosition; // Temporarily disabled
   LocationData? _currentLocationData;
   Set<Marker> _markers = {};
   String? _currentAddress;
@@ -19,7 +21,7 @@ class GoogleMapsProvider extends ChangeNotifier {
   
   // Getters
   GoogleMapController? get mapController => _mapController;
-  Position? get currentPosition => _currentPosition;
+  // Position? get currentPosition => _currentPosition; // Temporarily disabled
   LocationData? get currentLocationData => _currentLocationData;
   Set<Marker> get markers => _markers;
   String? get currentAddress => _currentAddress;
@@ -33,7 +35,8 @@ class GoogleMapsProvider extends ChangeNotifier {
     notifyListeners();
   }
   
-  // Get current location
+  // Get current location - TEMPORARILY DISABLED
+  /*
   Future<void> getCurrentLocation() async {
     _setLoading(true);
     _clearError();
@@ -59,6 +62,43 @@ class GoogleMapsProvider extends ChangeNotifier {
         addMarker(
           'current_location',
           LatLng(_currentPosition!.latitude, _currentPosition!.longitude),
+          title: 'موقعي الحالي',
+          snippet: _currentAddress,
+        );
+      }
+    } catch (e) {
+      _setError('خطأ في الحصول على الموقع الحالي: $e');
+    } finally {
+      _setLoading(false);
+    }
+  }
+  */
+  
+  // Temporary replacement for getCurrentLocation
+  Future<void> getCurrentLocation() async {
+    _setLoading(true);
+    _clearError();
+    
+    try {
+      _currentLocationData = await _locationService.getCurrentLocationData();
+      
+      if (_currentLocationData != null) {
+        // Get address for current location
+        _currentAddress = await _mapsService.getAddressFromCoordinates(
+          _currentLocationData!.latitude!,
+          _currentLocationData!.longitude!,
+        );
+        
+        // Move camera to current location
+        await _mapsService.moveCameraToLocation(
+          _currentLocationData!.latitude!,
+          _currentLocationData!.longitude!,
+        );
+        
+        // Add marker for current location
+        addMarker(
+          'current_location',
+          LatLng(_currentLocationData!.latitude!, _currentLocationData!.longitude!),
           title: 'موقعي الحالي',
           snippet: _currentAddress,
         );

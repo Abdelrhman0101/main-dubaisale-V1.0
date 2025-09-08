@@ -270,6 +270,25 @@ class CarAdProvider with ChangeNotifier {
     safeNotifyListeners();
   }
 
+  // دالة لمسح جميع الفلاتر
+  void clearAllFilters() {
+    _selectedMake = null;
+    _selectedModel = null;
+    _selectedTrims.clear();
+    _selectedMakes.clear();
+    _selectedModels.clear();
+    _selectedYears.clear();
+    _models.clear();
+    _trims.clear();
+    yearFrom = null;
+    yearTo = null;
+    kmFrom = null;
+    kmTo = null;
+    priceFrom = null;
+    priceTo = null;
+    safeNotifyListeners();
+  }
+
   // --- Other Functions ---
   Future<void> fetchAdDetails(int adId) async {
     _isLoadingDetails = true; _detailsError = null; _adDetails = null; safeNotifyListeners();
@@ -340,14 +359,35 @@ class CarAdProvider with ChangeNotifier {
     }
   }
 
-  Future<bool> submitCarAd({required String title, required String description, required String make, required String model, String? trim, required String year, required String km, required String price, String? specs, String? carType, required String transType, String? fuelType, String? color, String? interiorColor, required bool warranty, String? engineCapacity, String? cylinders, String? horsepower, String? doorsNo, String? seatsNo, String? steeringSide, required String phoneNumber, String? whatsapp, required String emirate, required String area, required String advertiserType, required String advertiserName, required File mainImage, required List<File> thumbnailImages}) async {
+  Future<bool> submitCarAd({required String title, required String description, required String make, required String model, String? trim, required String year, required String km, required String price, String? specs, String? carType, required String transType, String? fuelType, String? color, String? interiorColor, required bool warranty, String? engineCapacity, String? cylinders, String? horsepower, String? doorsNo, String? seatsNo, String? steeringSide, required String phoneNumber, String? whatsapp, required String emirate, required String area, required String advertiserType, required String advertiserName, required File mainImage, required List<File> thumbnailImages, required String planType, required int planDays, required String planExpiresAt}) async {
     _isCreatingAd = true; _createAdError = null; safeNotifyListeners();
     try {
       final token = await const FlutterSecureStorage().read(key: 'auth_token');
       if(token==null) throw Exception("Token missing");
-      await _carAdRepository.createCarAd(title: title, description: description, make: make, model: model, trim: trim, year: year, km: km, price: price, specs: specs, carType: carType, transType: transType, fuelType: fuelType, color: color, interiorColor: interiorColor, warranty: warranty, engineCapacity: engineCapacity, cylinders: cylinders, horsepower: horsepower, doorsNo: doorsNo, seatsNo: seatsNo, steeringSide: steeringSide, advertiserName: advertiserName, phoneNumber: phoneNumber, whatsapp: whatsapp, emirate: emirate, area: area, advertiserType: advertiserType, mainImage: mainImage, thumbnailImages: thumbnailImages, token: token);
+      
+      // طباعة تشخيصية للبيانات المرسلة
+      print('=== CAR AD SUBMISSION DEBUG ===');
+      print('Title: $title');
+      print('Make: $make');
+      print('Model: $model');
+      print('Year: $year');
+      print('Phone: $phoneNumber');
+      print('Emirate: $emirate');
+      print('Area: $area');
+      print('Plan Type: $planType');
+      print('Plan Days: $planDays');
+      print('Plan Expires At: $planExpiresAt');
+      print('Main Image Path: ${mainImage.path}');
+      print('Thumbnail Images Count: ${thumbnailImages.length}');
+      print('===============================');
+      
+      await _carAdRepository.createCarAd(title: title, description: description, make: make, model: model, trim: trim, year: year, km: km, price: price, specs: specs, carType: carType, transType: transType, fuelType: fuelType, color: color, interiorColor: interiorColor, warranty: warranty, engineCapacity: engineCapacity, cylinders: cylinders, horsepower: horsepower, doorsNo: doorsNo, seatsNo: seatsNo, steeringSide: steeringSide, advertiserName: advertiserName, phoneNumber: phoneNumber, whatsapp: whatsapp, emirate: emirate, area: area, advertiserType: advertiserType, mainImage: mainImage, thumbnailImages: thumbnailImages, token: token, planType: planType, planDays: planDays, planExpiresAt: planExpiresAt);
       return true;
     } catch (e) {
+      print('=== CAR AD SUBMISSION ERROR ===');
+      print('Error Type: ${e.runtimeType}');
+      print('Error Message: $e');
+      print('==============================');
       _createAdError = e.toString();
       return false;
     } finally {

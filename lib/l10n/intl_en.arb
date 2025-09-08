@@ -85,7 +85,7 @@
   "home":"Home",
   "srtting":"Settings",
   "manage":"Manage",
-  "post":"Place An Ad",
+  "post":"Posting",
 
   "editprof4":"Edit my Profile",
   "editing1":"Editing",
@@ -305,7 +305,7 @@
     "payNow": "Pay Now",
     
 
-   "Optional":"Optional",
+   "optional":"Optional",
 
   "noResultsFound":"No Results Found",
   "addNew":"Add New",
@@ -332,7 +332,9 @@
    "loading":"loading",
    "delete":"delete",
    "please_select_make":"please_select_make",
-   "please_fill_required_fields":"please_fill_required_fields"
+   "please_fill_required_fields":"please_fill_required_fields",
+   "searchForLocation": "Search for a location",
+   "confirmLocation": "Confirm Location"
    
 
 }

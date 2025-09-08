@@ -185,7 +185,7 @@
 "service": "الخدمة",
 
 
-  "place_an_ad": "أضف إعلانًا",
+  "place_an_ad": "نشر",
   "featured": "مُفضل",
   "free": "مجاني",
   "appearance_top": "الظهور في أعلى نتائج البحث",
@@ -313,7 +313,9 @@
    "loading":"جار التحميل",
    "delete":"حذف",
    "please_select_make":"الرجاء اختيار الماركة",
-   "please_fill_required_fields":"الرجاء ملء الحقول المطلوبة"
+   "please_fill_required_fields":"الرجاء ملء الحقول المطلوبة",
+   "searchForLocation": "البحث عن موقع",
+   "confirmLocation": "تأكيد الموقع"
 
 
 

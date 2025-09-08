@@ -1,5 +1,5 @@
 import 'package:location/location.dart' as loc;
-import 'package:geolocator/geolocator.dart';
+// import 'package:geolocator/geolocator.dart'; // Temporarily disabled
 import 'package:geocoding/geocoding.dart' as geo;
 
 class LocationService {
@@ -61,7 +61,8 @@ class LocationService {
     }
   }
   
-  // Get current position using geolocator
+  // Get current position using geolocator - TEMPORARILY DISABLED
+  /*
   Future<Position?> getCurrentPosition() async {
     try {
       bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
@@ -89,6 +90,7 @@ class LocationService {
       return null;
     }
   }
+  */
   
   // Listen to location changes
   Stream<loc.LocationData> getLocationStream() {
@@ -124,9 +126,17 @@ class LocationService {
     }
   }
   
-  // Calculate distance between two points in meters
+  // Calculate distance between two points in meters - TEMPORARILY DISABLED
+  /*
   double calculateDistance(double lat1, double lon1, double lat2, double lon2) {
     return Geolocator.distanceBetween(lat1, lon1, lat2, lon2);
+  }
+  */
+  
+  // Temporary replacement for distance calculation
+  double calculateDistance(double lat1, double lon1, double lat2, double lon2) {
+    // Simple approximation - replace with proper calculation later
+    return 0.0;
   }
   
   // Format distance for display

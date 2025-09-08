@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:advertising_app/presentation/providers/car_sales_ad_provider.dart';
 import 'package:advertising_app/presentation/providers/car_sales_info_provider.dart';
 import 'package:advertising_app/presentation/providers/google_maps_provider.dart';
+import 'package:advertising_app/presentation/providers/auth_repository.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -14,6 +15,8 @@ import 'package:advertising_app/presentation/widget/custom_phone_field.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 // الثوابت
 const Color KTextColor = Color.fromRGBO(0, 30, 91, 1);
@@ -22,8 +25,16 @@ final Color borderColor = const Color.fromRGBO(8, 194, 201, 1);
 
 class CarSalesAdScreen extends StatefulWidget {
   final Function(Locale) onLanguageChange;
-  const CarSalesAdScreen({Key? key, required this.onLanguageChange})
-      : super(key: key);
+  final String? initialLocation;
+  final double? initialLatitude;
+  final double? initialLongitude;
+  const CarSalesAdScreen({
+    Key? key, 
+    required this.onLanguageChange,
+    this.initialLocation,
+    this.initialLatitude,
+    this.initialLongitude,
+  }) : super(key: key);
 
   @override
   State<CarSalesAdScreen> createState() => _CarSalesAdScreenState();
@@ -35,11 +46,419 @@ class _CarSalesAdScreenState extends State<CarSalesAdScreen> {
   final TextEditingController _priceController = TextEditingController();
   final TextEditingController _kilometersController = TextEditingController();
   final TextEditingController _areaController = TextEditingController();
+  final TextEditingController _yearController = TextEditingController();
 
-  String? selectedMake, selectedModel, selectedTrim, selectedYear;
+  @override
+  void initState() {
+    super.initState();
+    // استخدام الموقع المرسل من edit_profile.dart إذا كان متوفراً
+    if (widget.initialLocation != null) {
+      selectedLocation = widget.initialLocation!;
+    }
+    
+    // جلب بيانات المواصفات والماركات والموديلات من API عند تحميل الشاشة
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final infoProvider = context.read<CarSalesInfoProvider>();
+      final adProvider = context.read<CarAdProvider>();
+      final authProvider = context.read<AuthProvider>();
+
+      // Get token from secure storage
+      final token = await const FlutterSecureStorage().read(key: 'auth_token');
+
+      infoProvider.fetchCarSpecs(token: token);
+      infoProvider.fetchContactInfo(token: token);
+      adProvider.fetchMakes();
+
+      // تحديث موقع الخريطة إذا كانت الإحداثيات متوفرة
+      if (widget.initialLatitude != null && widget.initialLongitude != null) {
+        final googleMapsProvider = context.read<GoogleMapsProvider>();
+        await googleMapsProvider.moveCameraToLocation(
+          widget.initialLatitude!,
+          widget.initialLongitude!,
+        );
+        // إضافة marker للموقع المرسل
+        googleMapsProvider.addMarker(
+          'initial_location',
+          LatLng(widget.initialLatitude!, widget.initialLongitude!),
+          title: 'الموقع المحدد',
+          snippet: widget.initialLocation,
+        );
+      }
+
+      // التحقق من بيانات البروفايل
+      await _checkUserProfileData(authProvider);
+      
+      // تحميل الموقع المحفوظ من FlutterSecureStorage
+      await _loadSavedLocation();
+    });
+  }
+
+  // دالة للتحقق من بيانات البروفايل المطلوبة
+  Future<void> _checkUserProfileData(AuthProvider authProvider) async {
+    // جلب بيانات المستخدم إذا لم تكن متاحة
+    if (authProvider.user == null) {
+      await authProvider.fetchUserProfile();
+    }
+
+    final user = authProvider.user;
+    if (user == null) return;
+
+    List<String> missingFields = [];
+
+    // التحقق من الحقول المطلوبة
+    // if (user.advertiserName == null || user.advertiserName!.trim().isEmpty) {
+    //   missingFields.add('اسم المعلن');
+    // }
+    if (user.phone.trim().isEmpty) {
+      missingFields.add('رقم الهاتف');
+    }
+    // if (user.whatsapp == null || user.whatsapp!.trim().isEmpty) {
+    //   missingFields.add('رقم الواتساب');
+    // }
+    if ((user.address == null || user.address!.trim().isEmpty) &&
+        (user.latitude == null || user.longitude == null)) {
+      missingFields.add('الموقع');
+    }
+
+    // إظهار التنبيه إذا كانت هناك حقول ناقصة
+    if (missingFields.isNotEmpty && mounted) {
+     // _showProfileIncompleteDialog(missingFields);
+    }
+  }
+
+  // دالة لإظهار تنبيه البيانات الناقصة
+  // void _showProfileIncompleteDialog(List<String> missingFields) {
+  //   showDialog(
+  //     context: context,
+  //     barrierDismissible: false,
+  //     builder: (BuildContext context) {
+  //       return WillPopScope(
+  //         onWillPop: () async {
+  //           // عند الضغط على زر الرجوع، الخروج من الصفحة بالكامل
+  //           Navigator.of(context).pop(); // إغلاق الـ dialog
+  //           Navigator.of(context).pop(); // العودة إلى الشاشة السابقة
+  //           return false;
+  //         },
+  //         child: AlertDialog(
+  //           backgroundColor: Colors.white,
+  //           shape: RoundedRectangleBorder(
+  //             borderRadius: BorderRadius.circular(16),
+  //           ),
+  //           title: const Text(
+  //             'بيانات البروفايل ناقصة',
+  //             style: TextStyle(
+  //               fontWeight: FontWeight.bold,
+  //               color: Color(0xFF01547E),
+  //               fontSize: 18,
+  //             ),
+  //           ),
+  //           content: Column(
+  //             mainAxisSize: MainAxisSize.min,
+  //             crossAxisAlignment: CrossAxisAlignment.start,
+  //             children: [
+  //               const Text(
+  //                 'يجب استكمال الحقول التالية في ملف التعريف الخاص بك قبل إضافة الإعلان:',
+  //                 style: TextStyle(
+  //                   fontSize: 16,
+  //                   color: Color(0xFF333333),
+  //                 ),
+  //               ),
+  //               const SizedBox(height: 15),
+  //               ...missingFields
+  //                   .map((field) => Padding(
+  //                         padding: const EdgeInsets.symmetric(vertical: 4),
+  //                         child: Row(
+  //                           children: [
+  //                             const Icon(
+  //                               Icons.error_outline,
+  //                               color: Color(0xFFE74C3C),
+  //                               size: 18,
+  //                             ),
+  //                             const SizedBox(width: 10),
+  //                             Expanded(
+  //                               child: Text(
+  //                                 field,
+  //                                 style: const TextStyle(
+  //                                   color: Color(0xFFE74C3C),
+  //                                   fontSize: 14,
+  //                                   fontWeight: FontWeight.w500,
+  //                                 ),
+  //                               ),
+  //                             ),
+  //                           ],
+  //                         ),
+  //                       ))
+  //                   .toList(),
+  //             ],
+  //           ),
+  //           actions: [
+  //             SizedBox(
+  //               width: double.infinity,
+  //               child: ElevatedButton(
+  //                 onPressed: () {
+  //                  context.push('/editprofile');
+
+  //                   Navigator.of(context).pop();
+  //                   // الانتقال إلى صفحة تعديل البروفايل
+  //                   // Navigator.of(context).pushNamed('/editprofile');
+  //                 },
+  //                 style: ElevatedButton.styleFrom(
+  //                   backgroundColor: const Color.fromRGBO(8, 194, 201, 1),
+  //                   foregroundColor: Colors.white,
+  //                   padding: const EdgeInsets.symmetric(vertical: 14),
+  //                   shape: RoundedRectangleBorder(
+  //                     borderRadius: BorderRadius.circular(8),
+  //                   ),
+  //                   elevation: 2,
+  //                 ),
+  //                 child: const Text(
+  //                   'Go to Profile',
+  //                   style: TextStyle(
+  //                     color: Colors.white,
+  //                     fontSize: 16,
+  //                     fontWeight: FontWeight.w600,
+  //                   ),
+  //                 ),
+  //               ),
+  //             ),
+  //           ],
+  //         ),
+  //       );
+  //     },
+  //   );
+  // }
+
+  String? selectedMake, selectedModel, selectedTrim;
   String? selectedSpec, selectedCarType, selectedTransType;
   String? selectedFuelType, selectedColor, selectedInteriorColor;
   String? selectedWarrantyValue;
+
+  // دالة لإضافة عنصر جديد إلى بيانات جهات الاتصال
+  Future<void> _addContactItem(String field, String value) async {
+    final infoProvider = context.read<CarSalesInfoProvider>();
+    final authProvider = context.read<AuthProvider>();
+
+    // Get token from secure storage
+    final token = await const FlutterSecureStorage().read(key: 'auth_token');
+
+    await infoProvider.addContactItem(field, value, token: token);
+    // إعادة جلب البيانات بعد الإضافة
+    await infoProvider.fetchContactInfo(token: token);
+  }
+
+  // دالة حفظ الموقع في FlutterSecureStorage
+  Future<void> _saveLocationToStorage() async {
+    if (selectedLatLng == null || selectedLocation.isEmpty) return;
+    
+    try {
+      await _storage.write(key: 'saved_latitude', value: selectedLatLng!.latitude.toString());
+      await _storage.write(key: 'saved_longitude', value: selectedLatLng!.longitude.toString());
+      await _storage.write(key: 'saved_address', value: selectedLocation);
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('تم حفظ الموقع بنجاح'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('فشل في حفظ الموقع: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  // دالة تحميل الموقع المحفوظ من FlutterSecureStorage
+  Future<void> _loadSavedLocation() async {
+    try {
+      final savedLat = await _storage.read(key: 'saved_latitude');
+      final savedLng = await _storage.read(key: 'saved_longitude');
+      final savedAddress = await _storage.read(key: 'saved_address');
+      
+      if (savedLat != null && savedLng != null && savedAddress != null) {
+        setState(() {
+          selectedLatLng = LatLng(double.parse(savedLat), double.parse(savedLng));
+          selectedLocation = savedAddress;
+        });
+        
+        // تحريك الكاميرا إلى الموقع المحفوظ
+        final googleMapsProvider = context.read<GoogleMapsProvider>();
+        await googleMapsProvider.moveCameraToLocation(
+          double.parse(savedLat),
+          double.parse(savedLng),
+          zoom: 16.0,
+        );
+      }
+    } catch (e) {
+      print('Error loading saved location: $e');
+    }
+  }
+
+  // دالة الحصول على الموقع الحالي
+  Future<void> _getCurrentLocation() async {
+    print('Locate Me button pressed');
+    setState(() {
+      _isLoadingLocation = true;
+    });
+    
+    try {
+      // إظهار مؤشر التحميل
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('جاري تحديد الموقع...'),
+          backgroundColor: Color(0xFF01547E),
+          duration: Duration(seconds: 2),
+        ),
+      );
+
+      final mapsProvider = context.read<GoogleMapsProvider>();
+      await mapsProvider.getCurrentLocation();
+
+      if (mapsProvider.currentLocationData != null) {
+        final locationData = mapsProvider.currentLocationData!;
+        setState(() {
+          selectedLatLng = LatLng(
+              locationData.latitude!, locationData.longitude!);
+        });
+
+        // تحريك الكاميرا إلى الموقع الحالي مع تكبير أكبر
+        await mapsProvider.moveCameraToLocation(
+            locationData.latitude!, locationData.longitude!,
+            zoom: 16.0);
+
+        // تحويل الإحداثيات إلى عنوان
+        final address =
+            await mapsProvider.getAddressFromCoordinates(
+                locationData.latitude!, locationData.longitude!);
+        if (address != null) {
+          setState(() {
+            selectedLocation = address;
+          });
+          print('Address found: $address');
+        }
+
+        // حفظ الموقع تلقائياً
+        await _saveLocationToStorage();
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('تم تحديد الموقع بنجاح'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      } else {
+        throw Exception('لم يتم العثور على الموقع');
+      }
+    } catch (e) {
+      print('Location error: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('فشل في تحديد الموقع: $e'),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 4),
+        ),
+      );
+    } finally {
+      setState(() {
+        _isLoadingLocation = false;
+      });
+    }
+  }
+
+  // دالة فتح Google Maps
+  Future<void> _openGoogleMaps() async {
+    try {
+      // استخدام الموقع الحالي إذا كان متوفراً، وإلا استخدام إحداثيات دبي
+      double lat = selectedLatLng?.latitude ?? 25.2048;
+      double lng = selectedLatLng?.longitude ?? 55.2708;
+      
+      // إنشاء رابط Google Maps
+      final String googleMapsUrl = 'https://www.google.com/maps/search/?api=1&query=$lat,$lng';
+      final Uri url = Uri.parse(googleMapsUrl);
+      
+      // محاولة فتح Google Maps
+      if (await canLaunchUrl(url)) {
+        await launchUrl(url, mode: LaunchMode.externalApplication);
+      } else {
+        // الرجوع إلى النسخة الويب
+        final String webUrl = 'https://maps.google.com/?q=$lat,$lng';
+        final Uri webUri = Uri.parse(webUrl);
+        await launchUrl(webUri, mode: LaunchMode.externalApplication);
+      }
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('جاري فتح Google Maps...'),
+          backgroundColor: Colors.blue,
+        ),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('فشل في فتح Google Maps: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  // دالة الانتقال إلى منتقي الموقع
+  Future<void> _navigateToLocationPicker() async {
+    try {
+      // تحضير الموقع والعنوان الأولي للمنتقي
+      double? initialLat = selectedLatLng?.latitude;
+      double? initialLng = selectedLatLng?.longitude;
+      String? initialAddress = selectedLocation.isNotEmpty ? selectedLocation : null;
+      
+      // بناء المسار مع معاملات الاستعلام
+      String route = '/location_picker';
+      if (initialLat != null && initialLng != null) {
+        route += '?lat=$initialLat&lng=$initialLng';
+        if (initialAddress != null && initialAddress.isNotEmpty) {
+          route += '&address=${Uri.encodeComponent(initialAddress)}';
+        }
+      }
+      
+      // الانتقال إلى منتقي الموقع وانتظار النتيجة
+      final result = await context.push(route);
+      
+      // التعامل مع بيانات الموقع المُرجعة
+      if (result != null && result is Map<String, dynamic>) {
+        final LatLng? location = result['location'] as LatLng?;
+        final String? address = result['address'] as String?;
+        
+        if (location != null) {
+          setState(() {
+            selectedLatLng = location;
+            if (address != null && address.isNotEmpty) {
+              selectedLocation = address;
+            }
+          });
+          
+          // حفظ بيانات الموقع الجديدة
+          await _saveLocationToStorage();
+          
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('تم تحديث الموقع بنجاح'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('خطأ في اختيار الموقع: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
   String? selectedEngineCap, selectedCylinder, selectedHorsePower;
   String? selectedDoor, selectedSeat, selectedSteeringSide;
   String? selectedEmirate, selectedAdvertiserType;
@@ -47,6 +466,8 @@ class _CarSalesAdScreenState extends State<CarSalesAdScreen> {
   String? selectedPhoneNumber, selectedWhatsAppNumber;
   String selectedLocation = ''; // العنوان المحدد من الخريطة
   LatLng? selectedLatLng; // الإحداثيات المحددة
+  bool _isLoadingLocation = false; // حالة تحميل الموقع
+  final FlutterSecureStorage _storage = const FlutterSecureStorage();
 
   File? _mainImage;
   final List<File> _thumbnailImages = [];
@@ -59,6 +480,7 @@ class _CarSalesAdScreenState extends State<CarSalesAdScreen> {
     _priceController.dispose();
     _kilometersController.dispose();
     _areaController.dispose();
+    _yearController.dispose();
     super.dispose();
   }
 
@@ -95,13 +517,14 @@ class _CarSalesAdScreenState extends State<CarSalesAdScreen> {
     }
   }
 
-  Future<void> _submitAd() async {
+  // دالة للتحقق من صحة البيانات وتجميعها
+  Future<void> _validateAndProceedToNext() async {
     final s = S.of(context);
     List<String> validationErrors = [];
     if (_titleController.text.trim().isEmpty) validationErrors.add(s.title);
     if (selectedMake == null) validationErrors.add(s.make);
     if (selectedModel == null) validationErrors.add(s.model);
-    if (selectedYear == null) validationErrors.add(s.year);
+    if (_yearController.text.trim().isEmpty) validationErrors.add(s.year);
     if (_kilometersController.text.trim().isEmpty) validationErrors.add(s.km);
     if (_priceController.text.trim().isEmpty) validationErrors.add(s.price);
     if (selectedTransType == null) validationErrors.add(s.transType);
@@ -109,7 +532,8 @@ class _CarSalesAdScreenState extends State<CarSalesAdScreen> {
       validationErrors.add(s.phoneNumber);
     if (selectedEmirate == null) validationErrors.add(s.emirate);
     if (_areaController.text.trim().isEmpty) validationErrors.add(s.area);
-    if (selectedLocation == 'Dubai souq alharaj') validationErrors.add(s.location);
+    if (selectedLocation == 'Dubai souq alharaj')
+      validationErrors.add(s.location);
     if (selectedAdvertiserName == null) validationErrors.add(s.advertiserName);
     if (selectedAdvertiserType == null) validationErrors.add(s.advertiserType);
     if (_mainImage == null) validationErrors.add("Main Image");
@@ -147,407 +571,559 @@ class _CarSalesAdScreenState extends State<CarSalesAdScreen> {
           PhoneNumberFormatter.formatForApi(selectedWhatsAppNumber!);
     }
 
+    // تجميع البيانات في Map لتمريرها إلى الصفحة التالية
+    final Map<String, dynamic> adData = {
+      'title': _titleController.text,
+      'description': _descriptionController.text,
+      'make': selectedMake!,
+      'model': selectedModel!,
+      'trim': selectedTrim,
+      'year': _yearController.text,
+      'km': _kilometersController.text,
+      'price': _priceController.text,
+      'specs': selectedSpec,
+      'carType': selectedCarType,
+      'transType': selectedTransType!,
+      'fuelType': selectedFuelType,
+      'color': selectedColor,
+      'interiorColor': selectedInteriorColor,
+      'warranty': selectedWarrantyValue == 'Yes',
+      'engineCapacity': selectedEngineCap,
+      'cylinders': selectedCylinder,
+      'horsepower': selectedHorsePower,
+      'doorsNo': selectedDoor,
+      'seatsNo': selectedSeat,
+      'steeringSide': selectedSteeringSide,
+      'advertiserName': selectedAdvertiserName!,
+      'phoneNumber': formattedPhone,
+      'whatsapp': formattedWhatsApp,
+      'emirate': selectedEmirate!,
+      'area': selectedLocation.isNotEmpty ? selectedLocation : _areaController.text,
+      'advertiserType': selectedAdvertiserType!,
+      'mainImage': _mainImage!,
+      'thumbnailImages': _thumbnailImages,
+      'latitude': selectedLatLng?.latitude,
+      'longitude': selectedLatLng?.longitude,
+      'location': selectedLocation,
+    };
+
+    // الانتقال إلى صفحة اختيار نوع الإعلان مع تمرير البيانات
+    final result = await context.push('/placeAnAd', extra: adData);
+    
+    // إذا تم إرجاع نتيجة من صفحة place_an_ad، يمكن التعامل معها هنا
+    if (result != null && result == 'success') {
+      // العودة إلى الصفحة الرئيسية أو إظهار رسالة نجاح
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+            content: Text("تم نشر الإعلان بنجاح!"),
+            backgroundColor: Colors.green));
+        context.pop();
+      }
+    }
+  }
+
+  // دالة إرسال الإعلان (ستستخدم من صفحة place_an_ad)
+  Future<bool> submitCarAd(Map<String, dynamic> adData) async {
     final provider = context.read<CarAdProvider>();
-    final bool warrantyToSend = selectedWarrantyValue == 'Yes';
 
     final success = await provider.submitCarAd(
-      title: _titleController.text,
-      description: _descriptionController.text,
-      make: selectedMake!,
-      model: selectedModel!,
-      trim: selectedTrim,
-      year: selectedYear!,
-      km: _kilometersController.text,
-      price: _priceController.text,
-      specs: selectedSpec,
-      carType: selectedCarType,
-      transType: selectedTransType!,
-      fuelType: selectedFuelType,
-      color: selectedColor,
-      interiorColor: selectedInteriorColor,
-      warranty: warrantyToSend,
-      engineCapacity: selectedEngineCap,
-      cylinders: selectedCylinder,
-      horsepower: selectedHorsePower,
-      doorsNo: selectedDoor,
-      seatsNo: selectedSeat,
-      steeringSide: selectedSteeringSide,
-      advertiserName: selectedAdvertiserName!,
-      phoneNumber: formattedPhone,
-      whatsapp: formattedWhatsApp,
-      emirate: selectedEmirate!,
-      area: selectedLocation.isNotEmpty ? selectedLocation : _areaController.text,
-      advertiserType: selectedAdvertiserType!,
-      mainImage: _mainImage!,
-      thumbnailImages: _thumbnailImages,
+      title: adData['title'],
+      description: adData['description'],
+      make: adData['make'],
+      model: adData['model'],
+      trim: adData['trim'],
+      year: adData['year'],
+      km: adData['km'],
+      price: adData['price'],
+      specs: adData['specs'],
+      carType: adData['carType'],
+      transType: adData['transType'],
+      fuelType: adData['fuelType'],
+      color: adData['color'],
+      interiorColor: adData['interiorColor'],
+      warranty: adData['warranty'],
+      engineCapacity: adData['engineCapacity'],
+      cylinders: adData['cylinders'],
+      horsepower: adData['horsepower'],
+      doorsNo: adData['doorsNo'],
+      seatsNo: adData['seatsNo'],
+      steeringSide: adData['steeringSide'],
+      advertiserName: adData['advertiserName'],
+      phoneNumber: adData['phoneNumber'],
+      whatsapp: adData['whatsapp'],
+      emirate: adData['emirate'],
+      area: adData['area'],
+      advertiserType: adData['advertiserType'],
+      mainImage: adData['mainImage'],
+      thumbnailImages: adData['thumbnailImages'],
+      planType: adData['planType'] ?? 'free',
+      planDays: adData['planDays'] ?? 30,
+      planExpiresAt: adData['planExpiresAt'] ?? DateTime.now().add(Duration(days: 30)).toIso8601String(),
     );
 
-    if (!mounted) return;
-    if (success) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text("Ad posted successfully!"),
-          backgroundColor: Colors.green));
-      context.pop();
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(provider.createAdError ?? "Failed to post ad."),
-          backgroundColor: Colors.red));
-    }
+    return success;
   }
 
   @override
   Widget build(BuildContext context) {
     final s = S.of(context);
     final currentLocale = Localizations.localeOf(context).languageCode;
+    final infoProvider = context.watch<CarSalesInfoProvider>();
 
     return Scaffold(
       backgroundColor: Colors.white,
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            SizedBox(height: 25.h),
-            GestureDetector(
-              onTap: () => context.pop(),
-              child: Row(children: [
-                const SizedBox(width: 5),
-                Icon(Icons.arrow_back_ios, color: KTextColor, size: 20.sp),
-                Transform.translate(
-                    offset: Offset(-3.w, 0),
-                    child: Text(s.back,
-                        style: TextStyle(
-                            fontSize: 16.sp,
-                            fontWeight: FontWeight.w500,
-                            color: KTextColor)))
-              ]),
-            ),
-            SizedBox(height: 7.h),
-            Center(
-                child: Text(s.appTitle,
-                    style: TextStyle(
-                        fontWeight: FontWeight.w500,
-                        fontSize: 24.sp,
-                        color: KTextColor))),
-            SizedBox(height: 5.h),
-          
-            Consumer<CarSalesInfoProvider>(
-                builder: (context, infoProvider, child) =>
-                    _buildSingleSelectField(
-                        context,
-                        s.make,
-                        selectedMake,
-                        infoProvider.makes,
-                        (v) => setState(() {
-                              selectedMake = v;
-                              selectedModel = null;
-                              selectedTrim = null;
-                            }))),
-            const SizedBox(height: 7),
-            _buildFormRow([
-              Consumer<CarSalesInfoProvider>(
-                  builder: (context, infoProvider, child) {
-                List<String> availableModels = selectedMake != null
-                    ? infoProvider.getModelsForMake(selectedMake!)
-                    : [];
-                return _buildSingleSelectField(
-                    context,
-                    s.model,
-                    selectedModel,
-                    availableModels,
-                    (v) => setState(() {
-                          selectedModel = v;
-                          selectedTrim = null;
-                        }));
-              }),
-              Consumer<CarSalesInfoProvider>(
-                  builder: (context, infoProvider, child) {
-                List<String> availableTrims = selectedModel != null
-                    ? infoProvider.getTrimsForModel(selectedModel!)
-                    : [];
-                return _buildSingleSelectField(context, s.trim, selectedTrim,
-                    availableTrims, (v) => setState(() => selectedTrim = v));
-              }),
-            ]),
-            const SizedBox(height: 7),
-            _buildFormRow([
-              Consumer<CarSalesInfoProvider>(
-                  builder: (context, infoProvider, child) =>
-                      _buildSingleSelectField(
-                          context,
-                          s.year,
-                          selectedYear,
-                          infoProvider.years,
-                          (v) => setState(() => selectedYear = v))),
-              _buildTitledTextFormField(
-                  s.km, _kilometersController, borderColor, currentLocale,
-                  isNumber: true, hintText: "50000"),
-            ]),
-            const SizedBox(height: 7),
-            _buildFormRow([
-              _buildTitledTextFormField(
-                  s.price, _priceController, borderColor, currentLocale,
-                  isNumber: true, hintText: "120000"),
-              Consumer<CarSalesInfoProvider>(
-                  builder: (context, infoProvider, child) =>
-                      _buildSingleSelectField(
-                          context,
-                          s.specs,
-                          selectedSpec,
-                          infoProvider.specs,
-                          (v) => setState(() => selectedSpec = v))),
-            ]),
-            const SizedBox(height: 7),
-              _buildTitledTextFormField(
-                s.title, _titleController, borderColor, currentLocale,
-                minLines: 2, maxLines: 2),
-            const SizedBox(height: 7),
-            _buildFormRow([
-              Consumer<CarSalesInfoProvider>(
-                  builder: (context, infoProvider, child) =>
-                      _buildSingleSelectField(
-                          context,
-                          s.carType,
-                          selectedCarType,
-                          infoProvider.carTypes,
-                          (v) => setState(() => selectedCarType = v))),
-              Consumer<CarSalesInfoProvider>(
-                  builder: (context, infoProvider, child) =>
-                      _buildSingleSelectField(
-                          context,
-                          s.transType,
-                          selectedTransType,
-                          infoProvider.transmissionTypes,
-                          (v) => setState(() => selectedTransType = v))),
-              Consumer<CarSalesInfoProvider>(
-                  builder: (context, infoProvider, child) =>
-                      _buildSingleSelectField(
-                          context,
-                          s.fuelType,
-                          selectedFuelType,
-                          infoProvider.fuelTypes,
-                          (v) => setState(() => selectedFuelType = v))),
-            ]),
-            const SizedBox(height: 7),
-            _buildFormRow([
-              Consumer<CarSalesInfoProvider>(
-                  builder: (context, infoProvider, child) =>
-                      _buildSingleSelectField(
-                          context,
-                          s.color,
-                          selectedColor,
-                          infoProvider.colors,
-                          (v) => setState(() => selectedColor = v))),
-              Consumer<CarSalesInfoProvider>(
-                  builder: (context, infoProvider, child) =>
-                      _buildSingleSelectField(
-                          context,
-                          s.interiorColor,
-                          selectedInteriorColor,
-                          infoProvider.interiorColors,
-                          (v) => setState(() => selectedInteriorColor = v))),
-              Consumer<CarSalesInfoProvider>(
-                  builder: (context, infoProvider, child) =>
-                      _buildSingleSelectField(
-                          context,
-                          s.warranty,
-                          selectedWarrantyValue,
-                          infoProvider.warrantyOptions,
-                          (selection) => setState(
-                              () => selectedWarrantyValue = selection))),
-            ]),
-            const SizedBox(height: 15),
-            _buildFormRow([
-              Consumer<CarSalesInfoProvider>(
-                  builder: (context, infoProvider, child) =>
-                      _buildSingleSelectField(
-                          context,
-                          s.engineCapacity,
-                          selectedEngineCap,
-                          infoProvider.engineCapacities,
-                          (v) => setState(() => selectedEngineCap = v),
-                          titleFontSize: 12.5)),
-              Consumer<CarSalesInfoProvider>(
-                  builder: (context, infoProvider, child) =>
-                      _buildSingleSelectField(
-                          context,
-                          s.cylinders,
-                          selectedCylinder,
-                          infoProvider.cylinders,
-                          (v) => setState(() => selectedCylinder = v))),
-              Consumer<CarSalesInfoProvider>(
-                  builder: (context, infoProvider, child) =>
-                      _buildSingleSelectField(
-                          context,
-                          s.horse_power,
-                          selectedHorsePower,
-                          infoProvider.horsePowers,
-                          (v) => setState(() => selectedHorsePower = v))),
-            ]),
-            const SizedBox(height: 7),
-            _buildFormRow([
-              Consumer<CarSalesInfoProvider>(
-                  builder: (context, infoProvider, child) =>
-                      _buildSingleSelectField(
-                          context,
-                          s.doorsNo,
-                          selectedDoor,
-                          infoProvider.doorsNumbers,
-                          (v) => setState(() => selectedDoor = v))),
-              Consumer<CarSalesInfoProvider>(
-                  builder: (context, infoProvider, child) =>
-                      _buildSingleSelectField(
-                          context,
-                          s.seatsNo,
-                          selectedSeat,
-                          infoProvider.seatsNumbers,
-                          (v) => setState(() => selectedSeat = v))),
-              Consumer<CarSalesInfoProvider>(
-                  builder: (context, infoProvider, child) =>
-                      _buildSingleSelectField(
-                          context,
-                          s.steeringSide,
-                          selectedSteeringSide,
-                          infoProvider.steeringSides,
-                          (v) => setState(() => selectedSteeringSide = v))),
-            ]),
-            const SizedBox(height: 7),
-            Consumer<CarSalesInfoProvider>(
-                builder: (context, infoProvider, child) =>
-                    TitledSelectOrAddField(
-                        title: s.advertiserName,
-                        value: selectedAdvertiserName,
-                        items: infoProvider.advertiserNames,
-                        onChanged: (v) =>
-                            setState(() => selectedAdvertiserName = v))),
-            const SizedBox(height: 7),
-            _buildFormRow([
-              Consumer<CarSalesInfoProvider>(
-                  builder: (context, infoProvider, child) =>
-                      TitledSelectOrAddField(
-                          title: s.phoneNumber,
-                          value: selectedPhoneNumber,
-                          isNumeric: true,
-                          items: infoProvider.phoneNumbers,
-                          onChanged: (v) =>
-                              setState(() => selectedPhoneNumber = v))),
-              Consumer<CarSalesInfoProvider>(
-                  builder: (context, infoProvider, child) =>
-                      TitledSelectOrAddField(
-                          title: s.whatsApp,
-                          value: selectedWhatsAppNumber,
-                          isNumeric: true,
-                          items: infoProvider.phoneNumbers,
-                          onChanged: (v) =>
-                              setState(() => selectedWhatsAppNumber = v))),
-            ]),
-            const SizedBox(height: 7),
-            _buildFormRow([
-              Consumer<CarSalesInfoProvider>(
-                  builder: (context, infoProvider, child) =>
-                      _buildSingleSelectField(
-                          context,
-                          s.emirate,
-                          selectedEmirate,
-                          infoProvider.emirates,
-                          (v) => setState(() => selectedEmirate = v))),
-              Consumer<CarSalesInfoProvider>(
-                  builder: (context, infoProvider, child) =>
-                      _buildSingleSelectField(
-                          context,
-                          s.advertiserType,
-                          selectedAdvertiserType,
-                          infoProvider.advertiserTypes,
-                          (v) => setState(() => selectedAdvertiserType = v))),
-            ]),
-            const SizedBox(height: 7),
-            _buildTitledTextFormField(
-                s.area, _areaController, borderColor, currentLocale,
-                hintText: "Deira"),
-            const SizedBox(height: 7),
-            TitledDescriptionBox(
-                title: s.describeYourCar,
-                controller: _descriptionController,
-                borderColor: borderColor),
-            const SizedBox(height: 10),
-            _buildImageButton(
-                s.addMainImage, Icons.add_a_photo_outlined, borderColor,
-                onPressed: _pickMainImage),
-            if (_mainImage != null)
-              Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 8.0),
-                  child: Center(
-                      child: ClipRRect(
-                          borderRadius: BorderRadius.circular(8),
-                          child: Image.file(_mainImage!,
-                              height: 150, fit: BoxFit.cover)))),
-            const SizedBox(height: 7),
-            _buildImageButton(
-                '${s.add14Images} (${_thumbnailImages.length}/14)',
-                Icons.add_photo_alternate_outlined,
-                borderColor,
-                onPressed: _pickThumbnailImages),
-            if (_thumbnailImages.isNotEmpty)
-              Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 8.0),
-                  child: Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: _thumbnailImages
-                          .map((img) => ClipRRect(
-                              borderRadius: BorderRadius.circular(8),
-                              child: Image.file(img,
-                                  width: 80, height: 80, fit: BoxFit.cover)))
-                          .toList())),
-            const SizedBox(height: 10),
-            Text(s.location,
-                style: TextStyle(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 16.sp,
-                    color: KTextColor)),
-            SizedBox(height: 4.h),
-            Directionality(
-                textDirection: TextDirection.ltr,
-                child: Row(children: [
-                  SvgPicture.asset('assets/icons/locationicon.svg',
-                      width: 20.w, height: 20.h),
-                  SizedBox(width: 8.w),
-                  Expanded(
-                      child: Text(selectedLocation,
+      body: infoProvider.loading
+          ? const Center(
+              child: CircularProgressIndicator(),
+            )
+          : infoProvider.error != null
+              ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        infoProvider.error!,
+                        style: TextStyle(color: Colors.red, fontSize: 16.sp),
+                        textAlign: TextAlign.center,
+                      ),
+                      SizedBox(height: 16.h),
+                      ElevatedButton(
+                        onPressed: () {
+                          final provider = context.read<CarSalesInfoProvider>();
+                          provider.fetchCarSpecs();
+                          provider.fetchCarMakesAndModels();
+                        },
+                        child: Text('إعادة المحاولة'),
+                      ),
+                    ],
+                  ),
+                )
+              : SingleChildScrollView(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SizedBox(height: 25.h),
+                      GestureDetector(
+                        onTap: () => context.pop(),
+                        child: Row(children: [
+                          const SizedBox(width: 5),
+                          Icon(Icons.arrow_back_ios,
+                              color: KTextColor, size: 20.sp),
+                          Transform.translate(
+                              offset: Offset(-3.w, 0),
+                              child: Text(s.back,
+                                  style: TextStyle(
+                                      fontSize: 16.sp,
+                                      fontWeight: FontWeight.w500,
+                                      color: KTextColor)))
+                        ]),
+                      ),
+                      SizedBox(height: 7.h),
+                      Center(
+                          child: Text(s.appTitle,
+                              style: TextStyle(
+                                  fontWeight: FontWeight.w500,
+                                  fontSize: 24.sp,
+                                  color: KTextColor))),
+                      SizedBox(height: 5.h),
+                      Consumer<CarAdProvider>(
+                          builder: (context, adProvider, child) {
+                        final infoProvider =
+                            context.read<CarSalesInfoProvider>();
+                        // إزالة "All" من قائمة الماركات
+                        List<String> makesList =
+                            adProvider.makes.map((make) => make.name).toList();
+                        makesList.removeWhere((make) => make == "All");
+                        return _buildSingleSelectField(
+                            context,
+                            s.make,
+                            selectedMake,
+                            makesList,
+                            (v) => setState(() {
+                                  selectedMake = v;
+                                  selectedModel = null;
+                                  selectedTrim = null;
+                                  // جلب الموديلات للماركة المختارة
+                                  if (v != null && v != "Other") {
+                                    final selectedMakeModel = adProvider.makes
+                                        .firstWhere((make) => make.name == v);
+                                    adProvider
+                                        .fetchModelsForMake(selectedMakeModel);
+                                  }
+                                }));
+                      }),
+                      const SizedBox(height: 7),
+                      _buildFormRow([
+                        Consumer<CarAdProvider>(
+                            builder: (context, adProvider, child) {
+                          final infoProvider =
+                              context.read<CarSalesInfoProvider>();
+                          List<String> availableModels;
+                          // إذا تم اختيار "Other" في الماركة، أظهر "Other" فقط في الموديل
+                          if (selectedMake == "Other") {
+                            availableModels = ["Other"];
+                          } else {
+                            availableModels = adProvider.models
+                                .map((model) => model.name)
+                                .toList();
+                          }
+                          return _buildSingleSelectField(
+                              context,
+                              s.model,
+                              selectedModel,
+                              availableModels,
+                              (v) => setState(() {
+                                    selectedModel = v;
+                                    selectedTrim = null;
+                                    // جلب الترمز للموديل المختار
+                                    if (v != null && v != "Other") {
+                                      final selectedModelObj = adProvider.models
+                                          .firstWhere(
+                                              (model) => model.name == v);
+                                      adProvider
+                                          .fetchTrimsForModel(selectedModelObj);
+                                    }
+                                  }));
+                        }),
+                        Consumer<CarAdProvider>(
+                            builder: (context, adProvider, child) {
+                          final infoProvider =
+                              context.read<CarSalesInfoProvider>();
+                          List<String> availableTrims;
+                          // إذا تم اختيار "Other" في الماركة أو الموديل، أظهر "Other" فقط في الترم
+                          if (selectedMake == "Other" ||
+                              selectedModel == "Other") {
+                            availableTrims = ["Other"];
+                          } else {
+                            availableTrims = adProvider.trims
+                                .map((trim) => trim.name)
+                                .toList();
+                          }
+                          return _buildSingleSelectField(
+                              context,
+                              s.trim,
+                              selectedTrim,
+                              availableTrims,
+                              (v) => setState(() => selectedTrim = v));
+                        }),
+                      ]),
+                      const SizedBox(height: 7),
+                      _buildFormRow([
+                        Consumer<CarSalesInfoProvider>(
+                            builder: (context, infoProvider, child) =>
+                                _buildTitledTextFormFieldWithValidation(
+                                    s.year,
+                                    _yearController,
+                                    borderColor,
+                                    currentLocale,
+                                    isNumber: true,
+                                    hintText: "2020", validator: (value) {
+                                  if (value == null || value.isEmpty) {
+                                    return null; // السنة ليست مطلوبة
+                                  }
+                                  if (value.length != 4) {
+                                    return 'يجب أن تكون السنة 4 أرقام';
+                                  }
+                                  final year = int.tryParse(value);
+                                  if (year == null ||
+                                      year < 1900 ||
+                                      year > DateTime.now().year + 1) {
+                                    return 'يرجى إدخال سنة صحيحة';
+                                  }
+                                  return null;
+                                })),
+                        _buildTitledTextFormField(s.km, _kilometersController,
+                            borderColor, currentLocale,
+                            isNumber: true, hintText: "50000"),
+                      ]),
+                      const SizedBox(height: 7),
+                      _buildFormRow([
+                        _buildTitledTextFormField(s.price, _priceController,
+                            borderColor, currentLocale,
+                            isNumber: true, hintText: "120000"),
+                        Consumer<CarSalesInfoProvider>(
+                            builder: (context, infoProvider, child) =>
+                                _buildSingleSelectField(
+                                    context,
+                                    s.specs,
+                                    selectedSpec,
+                                    infoProvider.specs,
+                                    (v) => setState(() => selectedSpec = v))),
+                      ]),
+                      const SizedBox(height: 7),
+                      _buildTitledTextFormField(
+                          s.title, _titleController, borderColor, currentLocale,
+                          minLines: 2, maxLines: 3),
+                      const SizedBox(height: 7),
+                      _buildFormRow([
+                        Consumer<CarSalesInfoProvider>(
+                            builder: (context, infoProvider, child) =>
+                                _buildSingleSelectField(
+                                    context,
+                                    s.carType,
+                                    selectedCarType,
+                                    infoProvider.carTypes,
+                                    (v) =>
+                                        setState(() => selectedCarType = v))),
+                        Consumer<CarSalesInfoProvider>(
+                            builder: (context, infoProvider, child) =>
+                                _buildSingleSelectField(
+                                    context,
+                                    s.transType,
+                                    selectedTransType,
+                                    infoProvider.transmissionTypes,
+                                    (v) =>
+                                        setState(() => selectedTransType = v))),
+                        Consumer<CarSalesInfoProvider>(
+                            builder: (context, infoProvider, child) =>
+                                _buildSingleSelectField(
+                                    context,
+                                    s.fuelType,
+                                    selectedFuelType,
+                                    infoProvider.fuelTypes,
+                                    (v) =>
+                                        setState(() => selectedFuelType = v))),
+                      ]),
+                      const SizedBox(height: 7),
+                      _buildFormRow([
+                        Consumer<CarSalesInfoProvider>(
+                            builder: (context, infoProvider, child) =>
+                                _buildSingleSelectField(
+                                    context,
+                                    s.color,
+                                    selectedColor,
+                                    infoProvider.colors,
+                                    (v) => setState(() => selectedColor = v))),
+                        Consumer<CarSalesInfoProvider>(
+                            builder: (context, infoProvider, child) =>
+                                _buildSingleSelectField(
+                                    context,
+                                    s.interiorColor,
+                                    selectedInteriorColor,
+                                    infoProvider.interiorColors,
+                                    (v) => setState(
+                                        () => selectedInteriorColor = v))),
+                        Consumer<CarSalesInfoProvider>(
+                            builder: (context, infoProvider, child) =>
+                                _buildSingleSelectField(
+                                    context,
+                                    s.warranty,
+                                    selectedWarrantyValue,
+                                    infoProvider.warrantyOptions,
+                                    (selection) => setState(() =>
+                                        selectedWarrantyValue = selection))),
+                      ]),
+                      const SizedBox(height: 15),
+                      _buildFormRow([
+                        Consumer<CarSalesInfoProvider>(
+                            builder: (context, infoProvider, child) =>
+                                _buildSingleSelectField(
+                                    context,
+                                    s.engineCapacity,
+                                    selectedEngineCap,
+                                    infoProvider.engineCapacities,
+                                    (v) =>
+                                        setState(() => selectedEngineCap = v),
+                                    titleFontSize: 12.5)),
+                        Consumer<CarSalesInfoProvider>(
+                            builder: (context, infoProvider, child) =>
+                                _buildSingleSelectField(
+                                    context,
+                                    s.cylinders,
+                                    selectedCylinder,
+                                    infoProvider.cylinders,
+                                    (v) =>
+                                        setState(() => selectedCylinder = v))),
+                        Consumer<CarSalesInfoProvider>(
+                            builder: (context, infoProvider, child) =>
+                                _buildSingleSelectField(
+                                    context,
+                                    s.horse_power,
+                                    selectedHorsePower,
+                                    infoProvider.horsePowers,
+                                    (v) => setState(
+                                        () => selectedHorsePower = v))),
+                      ]),
+                      const SizedBox(height: 7),
+                      _buildFormRow([
+                        Consumer<CarSalesInfoProvider>(
+                            builder: (context, infoProvider, child) =>
+                                _buildSingleSelectField(
+                                    context,
+                                    s.doorsNo,
+                                    selectedDoor,
+                                    infoProvider.doorsNumbers,
+                                    (v) => setState(() => selectedDoor = v))),
+                        Consumer<CarSalesInfoProvider>(
+                            builder: (context, infoProvider, child) =>
+                                _buildSingleSelectField(
+                                    context,
+                                    s.seatsNo,
+                                    selectedSeat,
+                                    infoProvider.seatsNumbers,
+                                    (v) => setState(() => selectedSeat = v))),
+                        Consumer<CarSalesInfoProvider>(
+                            builder: (context, infoProvider, child) =>
+                                _buildSingleSelectField(
+                                    context,
+                                    s.steeringSide,
+                                    selectedSteeringSide,
+                                    infoProvider.steeringSides,
+                                    (v) => setState(
+                                        () => selectedSteeringSide = v))),
+                      ]),
+                      const SizedBox(height: 7),
+                      Consumer<CarSalesInfoProvider>(
+                          builder: (context, infoProvider, child) =>
+                              TitledSelectOrAddField(
+                                  title: s.advertiserName,
+                                  value: selectedAdvertiserName,
+                                  items: infoProvider.advertiserNames,
+                                  onChanged: (v) => setState(
+                                      () => selectedAdvertiserName = v),
+                                  onAddNew: (value) => _addContactItem(
+                                      'advertiser_names', value))),
+                      const SizedBox(height: 7),
+                      _buildFormRow([
+                        Consumer<CarSalesInfoProvider>(
+                            builder: (context, infoProvider, child) =>
+                                TitledSelectOrAddField(
+                                    title: s.phoneNumber,
+                                    value: selectedPhoneNumber,
+                                    isNumeric: true,
+                                    items: infoProvider.phoneNumbers,
+                                    onChanged: (v) =>
+                                        setState(() => selectedPhoneNumber = v),
+                                    onAddNew: (value) => _addContactItem(
+                                        'phone_numbers', value))),
+                        Consumer<CarSalesInfoProvider>(
+                            builder: (context, infoProvider, child) =>
+                                TitledSelectOrAddField(
+                                    title: s.whatsApp,
+                                    value: selectedWhatsAppNumber,
+                                    isNumeric: true,
+                                    items: infoProvider.whatsappNumbers,
+                                    onChanged: (v) => setState(
+                                        () => selectedWhatsAppNumber = v),
+                                    onAddNew: (value) => _addContactItem(
+                                        'whatsapp_numbers', value))),
+                      ]),
+                      const SizedBox(height: 7),
+                      _buildFormRow([
+                        Consumer<CarSalesInfoProvider>(
+                            builder: (context, infoProvider, child) =>
+                                _buildSingleSelectField(
+                                    context,
+                                    s.emirate,
+                                    selectedEmirate,
+                                    infoProvider.emirates,
+                                    (v) =>
+                                        setState(() => selectedEmirate = v))),
+                        Consumer<CarSalesInfoProvider>(
+                            builder: (context, infoProvider, child) =>
+                                _buildSingleSelectField(
+                                    context,
+                                    infoProvider
+                                        .getFieldLabel('advertiserType'),
+                                    selectedAdvertiserType,
+                                    infoProvider.advertiserTypes,
+                                    (v) => setState(
+                                        () => selectedAdvertiserType = v))),
+                      ]),
+                      const SizedBox(height: 7),
+                      _buildTitledTextFormField(
+                          s.area, _areaController, borderColor, currentLocale,
+                          hintText: "Deira"),
+                      const SizedBox(height: 7),
+                      TitledDescriptionBox(
+                          title: s.describeYourCar,
+                          controller: _descriptionController,
+                          borderColor: borderColor),
+                      const SizedBox(height: 10),
+                      _buildImageButton(s.addMainImage,
+                          Icons.add_a_photo_outlined, borderColor,
+                          onPressed: _pickMainImage),
+                      if (_mainImage != null)
+                        Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 8.0),
+                            child: Center(
+                                child: ClipRRect(
+                                    borderRadius: BorderRadius.circular(8),
+                                    child: Image.file(_mainImage!,
+                                        height: 150, fit: BoxFit.cover)))),
+                      const SizedBox(height: 7),
+                      _buildImageButton(
+                          '${s.add14Images} (${_thumbnailImages.length}/14)',
+                          Icons.add_photo_alternate_outlined,
+                          borderColor,
+                          onPressed: _pickThumbnailImages),
+                      if (_thumbnailImages.isNotEmpty)
+                        Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 8.0),
+                            child: Wrap(
+                                spacing: 8,
+                                runSpacing: 8,
+                                children: _thumbnailImages
+                                    .map((img) => ClipRRect(
+                                        borderRadius: BorderRadius.circular(8),
+                                        child: Image.file(img,
+                                            width: 80,
+                                            height: 80,
+                                            fit: BoxFit.cover)))
+                                    .toList())),
+                      const SizedBox(height: 10),
+                      Text(s.location,
                           style: TextStyle(
-                              fontSize: 14.sp,
-                              color: KTextColor,
-                              fontWeight: FontWeight.w500)))
-                ])),
-            SizedBox(height: 8.h),
-            _buildMapSection(context),
-            const SizedBox(height: 10),
-            SizedBox(
-              width: double.infinity,
-              child: Consumer<CarAdProvider>(
-                builder: (context, provider, child) {
-                  return provider.isCreatingAd
-                      ? const Center(child: CircularProgressIndicator())
-                      : ElevatedButton(
-                          onPressed: _submitAd,
-                          style: ElevatedButton.styleFrom(
-                              backgroundColor: KPrimaryColor,
-                              padding: const EdgeInsets.symmetric(vertical: 16),
-                              shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8))),
-                          child: Text(s.next,
-                              style: const TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white)),
-                        );
-                },
-              ),
-            ),
-            SizedBox(height: 20.h),
-          ],
-        ),
-      ),
+                              fontWeight: FontWeight.w600,
+                              fontSize: 16.sp,
+                              color: KTextColor)),
+                      SizedBox(height: 4.h),
+                      Directionality(
+                          textDirection: TextDirection.ltr,
+                          child: Row(children: [
+                            SvgPicture.asset('assets/icons/locationicon.svg',
+                                width: 20.w, height: 20.h),
+                            SizedBox(width: 8.w),
+                            Expanded(
+                                child: Text(selectedLocation,
+                                    style: TextStyle(
+                                        fontSize: 14.sp,
+                                        color: KTextColor,
+                                        fontWeight: FontWeight.w500)))
+                          ])),
+                      SizedBox(height: 8.h),
+                      _buildMapSection(context),
+                      const SizedBox(height: 10),
+                      SizedBox(
+                        width: double.infinity,
+                        child: Consumer<CarAdProvider>(
+                          builder: (context, provider, child) {
+                            return provider.isCreatingAd
+                                ? const Center(
+                                    child: CircularProgressIndicator())
+                                : ElevatedButton(
+                                    onPressed: _validateAndProceedToNext,
+                                    style: ElevatedButton.styleFrom(
+                                        backgroundColor: KPrimaryColor,
+                                        padding: const EdgeInsets.symmetric(
+                                            vertical: 16),
+                                        shape: RoundedRectangleBorder(
+                                            borderRadius:
+                                                BorderRadius.circular(8))),
+                                    child: Text(s.next,
+                                        style: const TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.bold,
+                                            color: Colors.white)),
+                                  );
+                          },
+                        ),
+                      ),
+                      SizedBox(height: 20.h),
+                    ],
+                  ),
+                ),
     );
   }
 
@@ -583,6 +1159,49 @@ class _CarSalesAdScreenState extends State<CarSalesAdScreen> {
             fontWeight: FontWeight.w500, color: KTextColor, fontSize: 12),
         textAlign: currentLocale == 'ar' ? TextAlign.right : TextAlign.left,
         keyboardType: isNumber ? TextInputType.number : TextInputType.text,
+        decoration: InputDecoration(
+            hintText: hintText,
+            hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 12),
+            counterText: "",
+            border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(color: borderColor)),
+            enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(color: borderColor)),
+            focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: const BorderSide(color: KPrimaryColor, width: 2)),
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            fillColor: Colors.white,
+            filled: true),
+      ),
+    ]);
+  }
+
+  Widget _buildTitledTextFormFieldWithValidation(String title,
+      TextEditingController controller, Color borderColor, String currentLocale,
+      {bool isNumber = false,
+      String? hintText,
+      int minLines = 1,
+      int maxLines = 1,
+      String? Function(String?)? validator}) {
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Text(title,
+          style: const TextStyle(
+              fontWeight: FontWeight.w600, color: KTextColor, fontSize: 14)),
+      const SizedBox(height: 4),
+      TextFormField(
+        controller: controller,
+        minLines: minLines,
+        maxLines: maxLines,
+        maxLength: maxLines > 1 ? 70 : null,
+        style: const TextStyle(
+            fontWeight: FontWeight.w500, color: KTextColor, fontSize: 12),
+        textAlign: currentLocale == 'ar' ? TextAlign.right : TextAlign.left,
+        keyboardType: isNumber ? TextInputType.number : TextInputType.text,
+        validator: validator,
         decoration: InputDecoration(
             hintText: hintText,
             hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 12),
@@ -700,7 +1319,8 @@ class _CarSalesAdScreenState extends State<CarSalesAdScreen> {
                 borderRadius: BorderRadius.circular(8),
                 child: GoogleMap(
                   initialCameraPosition: CameraPosition(
-                    target: selectedLatLng ?? const LatLng(25.2048, 55.2708), // Dubai coordinates
+                    target: selectedLatLng ??
+                        const LatLng(25.2048, 55.2708), // Dubai coordinates
                     zoom: 14.0,
                   ),
                   onMapCreated: (GoogleMapController controller) {
@@ -745,7 +1365,9 @@ class _CarSalesAdScreenState extends State<CarSalesAdScreen> {
                       selectedLatLng = position;
                     });
                     // تحويل الإحداثيات إلى عنوان
-                    final address = await mapsProvider.getAddressFromCoordinates(position.latitude, position.longitude);
+                    final address =
+                        await mapsProvider.getAddressFromCoordinates(
+                            position.latitude, position.longitude);
                     if (address != null) {
                       setState(() {
                         selectedLocation = address;
@@ -763,7 +1385,9 @@ class _CarSalesAdScreenState extends State<CarSalesAdScreen> {
                                 selectedLatLng = position;
                               });
                               // تحويل الإحداثيات إلى عنوان
-                              final address = await mapsProvider.getAddressFromCoordinates(position.latitude, position.longitude);
+                              final address =
+                                  await mapsProvider.getAddressFromCoordinates(
+                                      position.latitude, position.longitude);
                               if (address != null) {
                                 setState(() {
                                   selectedLocation = address;
@@ -776,76 +1400,64 @@ class _CarSalesAdScreenState extends State<CarSalesAdScreen> {
                 ),
               ),
             ),
+            // أزرار الموقع
             Positioned(
               bottom: 10,
               left: 10,
               right: 10,
-              child: ElevatedButton.icon(
-                icon: const Icon(Icons.location_on_outlined,
-                    color: Colors.white, size: 26),
-                label: Text(s.locateMe,
-                    style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w500,
-                        fontSize: 16)),
-                onPressed: () async {
-                  print('Locate Me button pressed');
-                  try {
-                    // إظهار مؤشر التحميل
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('جاري تحديد الموقع...'),
-                        duration: Duration(seconds: 2),
+              child: Row(
+                children: [
+                  // زر "Locate Me"
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      icon: _isLoadingLocation
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                              ),
+                            )
+                          : const Icon(Icons.my_location,
+                              color: Colors.white, size: 20),
+                      label: Text(s.locateMe,
+                          style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w500,
+                              fontSize: 14)),
+                      onPressed: _isLoadingLocation ? null : _getCurrentLocation,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: _isLoadingLocation ? Colors.grey : KPrimaryColor,
+                        minimumSize: const Size(0, 48),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8)),
                       ),
-                    );
-                    
-                    await mapsProvider.getCurrentLocation();
-                    print('Current position: ${mapsProvider.currentPosition}');
-                    
-                    if (mapsProvider.currentPosition != null) {
-                      final position = mapsProvider.currentPosition!;
-                      setState(() {
-                        selectedLatLng = LatLng(position.latitude, position.longitude);
-                      });
-                      
-                      // تحريك الكاميرا إلى الموقع الحالي مع تكبير أكبر
-                      await mapsProvider.moveCameraToLocation(position.latitude, position.longitude, zoom: 16.0);
-                      
-                      // تحويل الإحداثيات إلى عنوان
-                      final address = await mapsProvider.getAddressFromCoordinates(position.latitude, position.longitude);
-                      if (address != null) {
-                        setState(() {
-                          selectedLocation = address;
-                        });
-                        print('Address found: $address');
-                      }
-                      
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('تم تحديد الموقع بنجاح'),
-                          backgroundColor: Colors.green,
-                        ),
-                      );
-                    } else {
-                      throw Exception('لم يتم العثور على الموقع');
-                    }
-                  } catch (e) {
-                    print('Location error: $e');
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('فشل في تحديد الموقع: $e'),
-                        backgroundColor: Colors.red,
-                        duration: const Duration(seconds: 4),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  // زر "Open Google Map"
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      icon: const Icon(Icons.location_on_outlined,
+                          color: Colors.white, size: 20),
+                      label: const Text('Open Google Map',
+                          style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w500,
+                              fontSize: 12)),
+                      onPressed: () async {
+                        await _navigateToLocationPicker();
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF01547E),
+                        minimumSize: const Size(0, 48),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8)),
                       ),
-                    );
-                  }
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: KPrimaryColor,
-                  minimumSize: const Size(double.infinity, 48),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8)),
-                ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ]),
@@ -927,13 +1539,15 @@ class TitledSelectOrAddField extends StatelessWidget {
   final List<String> items;
   final Function(String) onChanged;
   final bool isNumeric;
+  final Function(String)? onAddNew;
   const TitledSelectOrAddField(
       {Key? key,
       required this.title,
       required this.value,
       required this.items,
       required this.onChanged,
-      this.isNumeric = false})
+      this.isNumeric = false,
+      this.onAddNew})
       : super(key: key);
   @override
   Widget build(BuildContext context) {
@@ -956,7 +1570,10 @@ class TitledSelectOrAddField extends StatelessWidget {
                   borderRadius:
                       BorderRadius.vertical(top: Radius.circular(20))),
               builder: (_) => _SearchableSelectOrAddBottomSheet(
-                  title: title, items: items, isNumeric: isNumeric),
+                  title: title,
+                  items: items,
+                  isNumeric: isNumeric,
+                  onAddNew: onAddNew),
             );
             if (result != null && result.isNotEmpty) {
               onChanged(result);
@@ -996,8 +1613,12 @@ class _SearchableSelectOrAddBottomSheet extends StatefulWidget {
   final String title;
   final List<String> items;
   final bool isNumeric;
+  final Function(String)? onAddNew;
   const _SearchableSelectOrAddBottomSheet(
-      {required this.title, required this.items, this.isNumeric = false});
+      {required this.title,
+      required this.items,
+      this.isNumeric = false,
+      this.onAddNew});
   @override
   _SearchableSelectOrAddBottomSheetState createState() =>
       _SearchableSelectOrAddBottomSheetState();
@@ -1134,7 +1755,9 @@ class _SearchableSelectOrAddBottomSheetState
                 Expanded(
                   child: TextFormField(
                     controller: _addController,
-                    keyboardType: widget.isNumeric ? TextInputType.number : TextInputType.text,
+                    keyboardType: widget.isNumeric
+                        ? TextInputType.number
+                        : TextInputType.text,
                     style: const TextStyle(
                         fontWeight: FontWeight.w500,
                         color: KTextColor,
@@ -1157,25 +1780,30 @@ class _SearchableSelectOrAddBottomSheetState
                 ),
                 const SizedBox(width: 8),
                 ElevatedButton(
-                  onPressed: () {
-                    String result = _addController.text;
-                    if (widget.isNumeric && result.isNotEmpty) {
-                      result = '$_selectedCountryCode$result';
-                    }
-                    if (result.isNotEmpty) Navigator.pop(context, result);
-                  },
-                  style: ElevatedButton.styleFrom(
-                      backgroundColor: KPrimaryColor,
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8)),
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 12),
-                      minimumSize: const Size(60, 48)),
-                  child: Text(s.add,
-                      style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 12))),
+                    onPressed: () async {
+                      String result = _addController.text;
+                      if (widget.isNumeric && result.isNotEmpty) {
+                        result = '$_selectedCountryCode$result';
+                      }
+                      if (result.isNotEmpty) {
+                        if (widget.onAddNew != null) {
+                          await widget.onAddNew!(result);
+                        }
+                        Navigator.pop(context, result);
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(
+                        backgroundColor: KPrimaryColor,
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8)),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 12),
+                        minimumSize: const Size(60, 48)),
+                    child: Text(s.add,
+                        style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12))),
               ],
             ),
             const SizedBox(height: 16),

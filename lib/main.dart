@@ -2,12 +2,16 @@ import 'package:advertising_app/data/repository/auth_repository.dart';
 import 'package:advertising_app/data/repository/car_sales_ad_repository.dart';
 import 'package:advertising_app/data/repository/manage_ads_repository.dart';
 import 'package:advertising_app/data/web_services/api_service.dart';
+import 'package:advertising_app/data/web_services/google_api_service.dart';
+import 'package:advertising_app/data/web_services/google_maps_service.dart';
 import 'package:advertising_app/generated/l10n.dart';
 import 'package:advertising_app/presentation/providers/auth_repository.dart';
 import 'package:advertising_app/presentation/providers/car_sales_ad_provider.dart';
 import 'package:advertising_app/presentation/providers/car_sales_info_provider.dart';
 import 'package:advertising_app/presentation/providers/manage_ads_provider.dart';
 import 'package:advertising_app/presentation/providers/google_maps_provider.dart';
+import 'package:advertising_app/presentation/providers/settings_provider.dart';
+import 'package:advertising_app/data/repository/settings_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -16,15 +20,21 @@ import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:advertising_app/router/go_router_app.dart';
 import 'package:advertising_app/router/local_notifier.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 final localeChangeNotifier = LocaleChangeNotifier();
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await dotenv.load(fileName: ".env");
   // 1. تهيئة جميع الخدمات والـ Repositories في مكان واحد
   final ApiService apiService = ApiService();
   final AuthRepository authRepository = AuthRepository(apiService);
   final CarAdRepository carAdRepository = CarAdRepository(apiService); // <-- تم تعريفه هنا
-  final MyAdsRepository myAdsRepository = MyAdsRepository(apiService);
+  final ManageAdsRepository myAdsRepository = ManageAdsRepository(apiService);
+  final SettingsRepository settingsRepository = SettingsRepository(apiService);
+  final GoogleApiService googleApiService = GoogleApiService();
+  final GoogleMapsService googleMapsService = GoogleMapsService(googleApiService);
 
   runApp(
     // 2. استخدام MultiProvider لتوفير جميع الـ Providers
@@ -38,13 +48,16 @@ void main() {
           create: (_) => CarAdProvider(carAdRepository), // <-- الآن يعمل بشكل صحيح
         ),
         ChangeNotifierProvider(
-          create: (_) => CarSalesInfoProvider(), // <-- CarSalesInfoProvider الجديد
+          create: (_) => CarSalesInfoProvider(), // <-- CarSalesInfoProvider بدون repository
         ),
         ChangeNotifierProvider(
           create: (_) => MyAdsProvider(myAdsRepository), // <-- استخدم الكائن الذي أنشأته
         ),
         ChangeNotifierProvider(
-          create: (_) => GoogleMapsProvider(), // <-- Google Maps Provider
+          create: (_) => GoogleMapsProvider(googleMapsService), // <-- Google Maps Provider
+        ),
+        ChangeNotifierProvider(
+          create: (_) => SettingsProvider(settingsRepository), // <-- Settings Provider
         ),
         // يمكنك إضافة أي providers مستقبلية هنا
       ],

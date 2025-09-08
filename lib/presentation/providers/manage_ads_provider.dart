@@ -8,7 +8,7 @@ import 'package:intl/intl.dart';
 
 
 class MyAdsProvider with ChangeNotifier {
-  final MyAdsRepository _myAdsRepository;
+  final ManageAdsRepository _myAdsRepository;
   MyAdsProvider(this._myAdsRepository);
 
   // --- حالات Provider ---

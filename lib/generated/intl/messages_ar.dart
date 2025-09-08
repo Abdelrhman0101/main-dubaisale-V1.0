@@ -25,6 +25,9 @@ class MessageLookup extends MessageLookupByLibrary {
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
     "Optional": MessageLookupByLibrary.simpleMessage("اختيارى"),
+    "accountCreatedSuccessfully": MessageLookupByLibrary.simpleMessage(
+      "تم إنشاء الحساب بنجاح",
+    ),
     "ad": MessageLookupByLibrary.simpleMessage("عدد الإعلانات"),
     "add": MessageLookupByLibrary.simpleMessage("إضافة"),
     "add10Images": MessageLookupByLibrary.simpleMessage("إضافة 10 صور"),
@@ -51,8 +54,12 @@ class MessageLookup extends MessageLookupByLibrary {
     "agreeTerms": MessageLookupByLibrary.simpleMessage(
       "أوافق على الشروط والأحكام",
     ),
+    "agreeTermsValidation": MessageLookupByLibrary.simpleMessage(
+      "الموافقة على شروط التحقق",
+    ),
     "all": MessageLookupByLibrary.simpleMessage("الكل"),
     "amount": MessageLookupByLibrary.simpleMessage("المبلغ"),
+    "any": MessageLookupByLibrary.simpleMessage("أي"),
     "appTitle": MessageLookupByLibrary.simpleMessage("إعلانات بيع السيارات"),
     "appearance_after_featured": MessageLookupByLibrary.simpleMessage(
       "الظهور بعد الإعلانات المُفضلة",
@@ -69,6 +76,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "appearance_top": MessageLookupByLibrary.simpleMessage(
       "الظهور في أعلى نتائج البحث",
     ),
+    "apply": MessageLookupByLibrary.simpleMessage("تطبيق"),
     "arabic": MessageLookupByLibrary.simpleMessage("English"),
     "area": MessageLookupByLibrary.simpleMessage("المنطقة"),
     "back": MessageLookupByLibrary.simpleMessage("رجوع"),
@@ -91,6 +99,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "category": MessageLookupByLibrary.simpleMessage("الفئة"),
     "categoryType": MessageLookupByLibrary.simpleMessage("نوع الفئة"),
     "category_type": MessageLookupByLibrary.simpleMessage("نوع التصنيف"),
+    "chooseAnOption": MessageLookupByLibrary.simpleMessage("اختر خيارًا"),
     "choose_make": MessageLookupByLibrary.simpleMessage("اختر الماركة"),
     "choose_model": MessageLookupByLibrary.simpleMessage("اختر الطراز"),
     "click_daily_offers": MessageLookupByLibrary.simpleMessage(
@@ -141,6 +150,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "daily_refresh": MessageLookupByLibrary.simpleMessage("تحديث يومي مفعّل"),
     "dayRent": MessageLookupByLibrary.simpleMessage("الإيجار اليومي"),
     "days": MessageLookupByLibrary.simpleMessage("أيام"),
+    "delete": MessageLookupByLibrary.simpleMessage("حذف"),
     "describeYourCar": MessageLookupByLibrary.simpleMessage("صف سيارتك"),
     "description": MessageLookupByLibrary.simpleMessage("الوصف"),
     "discover_best_cars_deals": MessageLookupByLibrary.simpleMessage(
@@ -214,6 +224,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "هل نسيت كلمة المرور؟",
     ),
     "free": MessageLookupByLibrary.simpleMessage("مجاني"),
+    "from": MessageLookupByLibrary.simpleMessage("من"),
     "fuelType": MessageLookupByLibrary.simpleMessage("نوع الوقود"),
     "fuel_type": MessageLookupByLibrary.simpleMessage("نوع الوقود"),
     "guestLogin": MessageLookupByLibrary.simpleMessage("دخول كضيف"),
@@ -235,6 +246,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "jobsAds": MessageLookupByLibrary.simpleMessage("إعلانات الوظائف"),
     "km": MessageLookupByLibrary.simpleMessage("كم"),
     "language": MessageLookupByLibrary.simpleMessage("اللغة"),
+    "loading": MessageLookupByLibrary.simpleMessage("جار التحميل"),
     "locateMe": MessageLookupByLibrary.simpleMessage("حدد موقعي"),
     "location": MessageLookupByLibrary.simpleMessage("الموقع"),
     "login": MessageLookupByLibrary.simpleMessage("تسجيل دخول"),
@@ -247,6 +259,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "myProfile": MessageLookupByLibrary.simpleMessage("ملفي الشخصي"),
     "newpass": MessageLookupByLibrary.simpleMessage("كلمة المرور الجديدة"),
     "next": MessageLookupByLibrary.simpleMessage("التالي"),
+    "no": MessageLookupByLibrary.simpleMessage("لا"),
     "noResultsFound": MessageLookupByLibrary.simpleMessage("لا توجد نتائج"),
     "notifications": MessageLookupByLibrary.simpleMessage("الإشعارات"),
     "ok": MessageLookupByLibrary.simpleMessage("تمام"),
@@ -257,6 +270,12 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "otherservices": MessageLookupByLibrary.simpleMessage("خدمات أخرى"),
     "password": MessageLookupByLibrary.simpleMessage("كلمة المرور"),
+    "passwordTooShort": MessageLookupByLibrary.simpleMessage(
+      "كلمة المرور قصيرة جدًا",
+    ),
+    "passwordsDoNotMatch": MessageLookupByLibrary.simpleMessage(
+      "كلمتا المرور غير متطابقتين",
+    ),
     "pay": MessageLookupByLibrary.simpleMessage("دفع"),
     "payNow": MessageLookupByLibrary.simpleMessage("ادفع الآن"),
     "payWithCreditCard": MessageLookupByLibrary.simpleMessage(
@@ -273,7 +292,25 @@ class MessageLookup extends MessageLookupByLibrary {
       " أرسلنا رسالة نصية تحتوي على رمز التفعيل إلى رقم هاتفك",
     ),
     "placeName": MessageLookupByLibrary.simpleMessage("منارة موتورز"),
-    "place_an_ad": MessageLookupByLibrary.simpleMessage("أضف إعلانًا"),
+    "place_an_ad": MessageLookupByLibrary.simpleMessage("نشر"),
+    "pleaseConfirmPassword": MessageLookupByLibrary.simpleMessage(
+      "الرجاء تأكيد كلمة المرور",
+    ),
+    "pleaseEnterPhone": MessageLookupByLibrary.simpleMessage(
+      "الرجاء إدخال رقم الهاتف",
+    ),
+    "pleaseEnterUsername": MessageLookupByLibrary.simpleMessage(
+      "الرجاء إدخال اسم المستخدم",
+    ),
+    "pleaseEnterValidEmail": MessageLookupByLibrary.simpleMessage(
+      "الرجاء إدخال بريد إلكتروني صحيح",
+    ),
+    "please_fill_required_fields": MessageLookupByLibrary.simpleMessage(
+      "الرجاء ملء الحقول المطلوبة",
+    ),
+    "please_select_make": MessageLookupByLibrary.simpleMessage(
+      "الرجاء اختيار الماركة",
+    ),
     "post": MessageLookupByLibrary.simpleMessage(" مكان إضافةإعلان"),
     "postDate": MessageLookupByLibrary.simpleMessage("تاريخ النشر"),
     "premium": MessageLookupByLibrary.simpleMessage("مميز"),
@@ -293,6 +330,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "productName": MessageLookupByLibrary.simpleMessage("اسم المنتج"),
     "propertyType": MessageLookupByLibrary.simpleMessage("نوع العقار"),
     "property_type": MessageLookupByLibrary.simpleMessage("نوع العقار"),
+    "read_more": MessageLookupByLibrary.simpleMessage("قراءة المزيد"),
     "realEstateAds": MessageLookupByLibrary.simpleMessage("إعلانات العقارات"),
     "realestate": MessageLookupByLibrary.simpleMessage("العقارات"),
     "referralCode": MessageLookupByLibrary.simpleMessage("كودالخصم"),
@@ -306,6 +344,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "report_this_ad": MessageLookupByLibrary.simpleMessage(
       "الإبلاغ عن هذا الإعلان",
     ),
+    "reset": MessageLookupByLibrary.simpleMessage("إعادة تعيين"),
     "resetpass": MessageLookupByLibrary.simpleMessage(
       "إعادة تعيين كلمة المرور",
     ),
@@ -314,6 +353,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "salary": MessageLookupByLibrary.simpleMessage("الراتب"),
     "save": MessageLookupByLibrary.simpleMessage("حفظ"),
     "search": MessageLookupByLibrary.simpleMessage("بحث"),
+    "searchCountry": MessageLookupByLibrary.simpleMessage("البحث عن دولة"),
     "seatsNo": MessageLookupByLibrary.simpleMessage("عدد المقاعد"),
     "seats_no": MessageLookupByLibrary.simpleMessage("عدد المقاعد"),
     "section": MessageLookupByLibrary.simpleMessage("القسم"),
@@ -325,6 +365,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "serviceName": MessageLookupByLibrary.simpleMessage("اسم الخدمة"),
     "serviceType": MessageLookupByLibrary.simpleMessage("نوع الخدمة"),
     "service_type": MessageLookupByLibrary.simpleMessage("اسم الخدمة"),
+    "show_less": MessageLookupByLibrary.simpleMessage("إظهار أقل"),
     "signUp": MessageLookupByLibrary.simpleMessage("انشاء حساب"),
     "smart_search": MessageLookupByLibrary.simpleMessage("بحث ذكي"),
     "sort": MessageLookupByLibrary.simpleMessage("فرز حسب الأقرب"),
@@ -353,6 +394,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "translate": MessageLookupByLibrary.simpleMessage("ترجمة"),
     "trim": MessageLookupByLibrary.simpleMessage("الفئة"),
     "type": MessageLookupByLibrary.simpleMessage("النوع"),
+    "unknownError": MessageLookupByLibrary.simpleMessage("خطأ غير معروف"),
     "upgrade": MessageLookupByLibrary.simpleMessage("ترقية"),
     "uploadYourLogo": MessageLookupByLibrary.simpleMessage("ارفع شعارك"),
     "use_this_space_for_ads": MessageLookupByLibrary.simpleMessage(

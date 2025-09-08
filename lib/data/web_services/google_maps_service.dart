@@ -1,19 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geocoding/geocoding.dart';
-import 'package:geolocator/geolocator.dart';
+import 'package:advertising_app/data/web_services/google_api_service.dart';
+// import 'package:geolocator/geolocator.dart'; // Temporarily disabled
 
 class GoogleMapsService {
-  static const String _apiKey = 'AIzaSyBjRsbK7e-9tdNL3lF1JYiCacSe7j-zUIo';
-  
+  final GoogleApiService _googleApiService;
+
+  GoogleMapsService(this._googleApiService);
+
   GoogleMapController? _mapController;
-  
+
   // Initialize map controller
   void onMapCreated(GoogleMapController controller) {
     _mapController = controller;
   }
   
-  // Get current location
+  // Get current location - TEMPORARILY DISABLED
+  /*
   Future<Position?> getCurrentLocation() async {
     try {
       bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
@@ -41,6 +45,7 @@ class GoogleMapsService {
       return null;
     }
   }
+  */
   
   // Get address from coordinates
   Future<String?> getAddressFromCoordinates(double latitude, double longitude) async {
@@ -130,7 +135,8 @@ class GoogleMapsService {
     );
   }
   
-  // Calculate distance between two points
+  // Calculate distance between two points - TEMPORARILY DISABLED
+  /*
   double calculateDistance(LatLng point1, LatLng point2) {
     return Geolocator.distanceBetween(
       point1.latitude,
@@ -138,6 +144,13 @@ class GoogleMapsService {
       point2.latitude,
       point2.longitude,
     );
+  }
+  */
+  
+  // Temporary replacement for distance calculation
+  double calculateDistance(LatLng point1, LatLng point2) {
+    // Simple approximation - replace with proper calculation later
+    return 0.0;
   }
   
   // Dispose resources

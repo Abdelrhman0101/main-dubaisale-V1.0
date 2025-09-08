@@ -339,14 +339,14 @@ class _CarDetailsScreenState extends State<CarDetailsScreen> {
                         " ${car.title} ",
                         style: TextStyle(fontSize: 14.sp, color: KTextColor, fontWeight: FontWeight.w500),
                       ),
-                      SizedBox(height: 6.h),
-                      Row(
-                        children: [
-                          SvgPicture.asset('assets/icons/locationicon.svg', width: 20.w, height: 18.h),
-                          SizedBox(width: 6.w),
-                          Expanded(child: Text('${car.emirate} ${car.area}', style: TextStyle(fontSize: 14.sp, color: KTextColor, fontWeight: FontWeight.w500))),
-                        ],
-                      ),
+                      // SizedBox(height: 6.h),
+                      // Row(
+                      //   children: [
+                      //     SvgPicture.asset('assets/icons/locationicon.svg', width: 20.w, height: 18.h),
+                      //     SizedBox(width: 6.w),
+                      //     Expanded(child: Text('${car.emirate} ${car.area}', style: TextStyle(fontSize: 14.sp, color: KTextColor, fontWeight: FontWeight.w500))),
+                      //   ],
+                      // ),
                       SizedBox(height: 5.h),
                     ],
                   ),

@@ -159,6 +159,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "date": m1,
     "dayRent": MessageLookupByLibrary.simpleMessage("Day Rent"),
     "days": MessageLookupByLibrary.simpleMessage("Days"),
+    "delete": MessageLookupByLibrary.simpleMessage("delete"),
     "describeYourCar": MessageLookupByLibrary.simpleMessage(
       "Describe Your Car",
     ),
@@ -258,6 +259,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "jobsAds": MessageLookupByLibrary.simpleMessage("Jobs Ads"),
     "km": MessageLookupByLibrary.simpleMessage("Km"),
     "language": MessageLookupByLibrary.simpleMessage("Language"),
+    "loading": MessageLookupByLibrary.simpleMessage("loading"),
     "locateMe": MessageLookupByLibrary.simpleMessage("Locate Me"),
     "location": MessageLookupByLibrary.simpleMessage("Location"),
     "login": MessageLookupByLibrary.simpleMessage("Log In"),
@@ -316,7 +318,13 @@ class MessageLookup extends MessageLookupByLibrary {
     "pleaseEnterValidEmail": MessageLookupByLibrary.simpleMessage(
       "please Enter Valid Email",
     ),
-    "post": MessageLookupByLibrary.simpleMessage("Place An Ad"),
+    "please_fill_required_fields": MessageLookupByLibrary.simpleMessage(
+      "please_fill_required_fields",
+    ),
+    "please_select_make": MessageLookupByLibrary.simpleMessage(
+      "please_select_make",
+    ),
+    "post": MessageLookupByLibrary.simpleMessage("Posting"),
     "postDate": MessageLookupByLibrary.simpleMessage("Post Date"),
     "premium": MessageLookupByLibrary.simpleMessage("Premium"),
     "price": MessageLookupByLibrary.simpleMessage("Price"),
@@ -336,6 +344,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "productName": MessageLookupByLibrary.simpleMessage("Product Name"),
     "propertyType": MessageLookupByLibrary.simpleMessage("Property Type"),
     "property_type": MessageLookupByLibrary.simpleMessage("Property Type"),
+    "read_more": MessageLookupByLibrary.simpleMessage("read more"),
     "realEstateAds": MessageLookupByLibrary.simpleMessage("Real Estate Ads"),
     "realestate": MessageLookupByLibrary.simpleMessage("Real Estate"),
     "referralCode": MessageLookupByLibrary.simpleMessage("Referral Code"),
@@ -366,6 +375,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "serviceName": MessageLookupByLibrary.simpleMessage("Service Name"),
     "serviceType": MessageLookupByLibrary.simpleMessage("Service Type"),
     "service_type": MessageLookupByLibrary.simpleMessage("Service name"),
+    "show_less": MessageLookupByLibrary.simpleMessage("show_less"),
     "signUp": MessageLookupByLibrary.simpleMessage("Sign Up"),
     "smart_search": MessageLookupByLibrary.simpleMessage("Smart Search"),
     "sort": MessageLookupByLibrary.simpleMessage("Sort By The Nearest"),

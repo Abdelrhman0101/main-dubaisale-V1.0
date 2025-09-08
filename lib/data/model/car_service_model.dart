@@ -1,5 +1,6 @@
-import 'package:advertising_app/data/model/favorite_item_interface_model.dart';
+
 import 'ad_priority.dart';
+import 'favorite_item_interface_model.dart';
 
 class CarServiceModel implements FavoriteItemInterface {
   final String title;
