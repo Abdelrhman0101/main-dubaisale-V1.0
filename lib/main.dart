@@ -8,6 +8,9 @@ import 'package:advertising_app/generated/l10n.dart';
 import 'package:advertising_app/presentation/providers/auth_repository.dart';
 import 'package:advertising_app/presentation/providers/car_sales_ad_provider.dart';
 import 'package:advertising_app/presentation/providers/car_sales_info_provider.dart';
+import 'package:advertising_app/presentation/providers/car_services_ad_provider.dart';
+import 'package:advertising_app/presentation/providers/car_services_info_provider.dart';
+import 'package:advertising_app/presentation/providers/car_services_provider.dart';
 import 'package:advertising_app/presentation/providers/manage_ads_provider.dart';
 import 'package:advertising_app/presentation/providers/google_maps_provider.dart';
 import 'package:advertising_app/presentation/providers/settings_provider.dart';
@@ -59,6 +62,12 @@ void main() async {
         ChangeNotifierProvider(
           create: (_) => SettingsProvider(settingsRepository), // <-- Settings Provider
         ),
+
+
+         ChangeNotifierProvider(create: (_) => CarServicesInfoProvider()),
+           ChangeNotifierProvider(create: (_) => CarServicesAdProvider()),
+          ChangeNotifierProvider(create: (_) => CarServicesProvider()),
+  
         // يمكنك إضافة أي providers مستقبلية هنا
       ],
       child: const RootApp(),

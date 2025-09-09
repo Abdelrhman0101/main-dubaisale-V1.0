@@ -1,5 +1,6 @@
 import 'package:advertising_app/constant/string.dart';
 import 'package:advertising_app/generated/l10n.dart';
+import 'package:advertising_app/presentation/providers/car_services_ad_provider.dart';
 import 'package:advertising_app/presentation/widget/custom_button.dart';
 import 'package:advertising_app/presentation/providers/car_sales_ad_provider.dart';
 import 'package:advertising_app/presentation/providers/settings_provider.dart';
@@ -38,115 +39,190 @@ class _PlaceAnAdState extends State<PlaceAnAd> {
     }
   }
 
-  // دالة إرسال الإعلان مع نوع الإعلان المحدد
+
   Future<void> _submitAdWithType() async {
-    if (widget.adData == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('لا توجد بيانات إعلان لإرسالها'),
-          backgroundColor: Colors.red,
-        ),
-      );
+    if (widget.adData == null || widget.adData!['adType'] == null) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('بيانات الإعلان غير كاملة'), backgroundColor: Colors.red));
       return;
     }
 
-    setState(() {
-      _isSubmitting = true;
-    });
+    setState(() { _isSubmitting = true; });
 
     try {
-      final provider = context.read<CarAdProvider>();
+      // 1. تجهيز بيانات الخطة
       final adOptions = _getAdOptions();
       final selectedAdOption = adOptions[selectedOption];
-      
-      // حساب تاريخ انتهاء الباقة
-      final now = DateTime.now();
-      final expiresAt = now.add(Duration(days: selectedAdOption.duration));
-      final planExpiresAtString = expiresAt.toIso8601String();
-      
-      // تحديد نوع الباقة بناءً على العنوان
+      final expiresAt = DateTime.now().add(Duration(days: selectedAdOption.duration));
       String planType;
-      if (selectedAdOption.title.contains('⭐')) {
-        planType = 'premium_star';
-      } else if (selectedAdOption.title.toLowerCase().contains('premium')) {
-        planType = 'premium';
-      } else if (selectedAdOption.title.toLowerCase().contains('featured')) {
-        planType = 'featured';
-      } else {
-        planType = 'free';
+      if (selectedAdOption.title.contains('⭐')) { planType = 'premium_star'; } 
+      else if (selectedAdOption.title.toLowerCase().contains('premium')) { planType = 'premium'; }
+      else if (selectedAdOption.title.toLowerCase().contains('featured')) { planType = 'featured'; }
+      else { planType = 'free'; }
+
+      // إضافة بيانات الخطة إلى بيانات الإعلان
+      widget.adData!['planType'] = planType;
+      widget.adData!['planDays'] = selectedAdOption.duration;
+      widget.adData!['planExpiresAt'] = expiresAt.toIso8601String();
+
+      // 2. تحديد نوع الإعلان واستدعاء الـ Provider الصحيح
+      final String adType = widget.adData!['adType'];
+      bool success = false;
+      String? submissionError;
+
+      if (adType == 'car_sale') {
+        final provider = context.read<CarAdProvider>();
+        success = await provider.submitCarAd(
+          widget.adData!, // المعامل الأول المطلوب
+          // نمرر البيانات من الـ map هنا
+          title: widget.adData!['title'], description: widget.adData!['description'], make: widget.adData!['make'], model: widget.adData!['model'],
+          trim: widget.adData!['trim'], year: widget.adData!['year'], km: widget.adData!['km'], price: widget.adData!['price'],
+          specs: widget.adData!['specs'], carType: widget.adData!['carType'], transType: widget.adData!['transType'], fuelType: widget.adData!['fuelType'],
+          color: widget.adData!['color'], interiorColor: widget.adData!['interiorColor'], warranty: widget.adData!['warranty'],
+          engineCapacity: widget.adData!['engineCapacity'], cylinders: widget.adData!['cylinders'], horsepower: widget.adData!['horsepower'],
+          doorsNo: widget.adData!['doorsNo'], seatsNo: widget.adData!['seatsNo'], steeringSide: widget.adData!['steeringSide'],
+          advertiserName: widget.adData!['advertiserName'], phoneNumber: widget.adData!['phoneNumber'], whatsapp: widget.adData!['whatsapp'],
+          emirate: widget.adData!['emirate'], area: widget.adData!['area'], advertiserType: widget.adData!['advertiverType'],
+          mainImage: widget.adData!['mainImage'], thumbnailImages: widget.adData!['thumbnailImages'],
+          // تمرير بيانات الخطة
+          planType: widget.adData!['planType'], planDays: widget.adData!['planDays'], planExpiresAt: widget.adData!['planExpiresAt'],
+        );
+        submissionError = provider.createAdError;
+
+      } else if (adType == 'car_service') {
+        final provider = context.read<CarServicesAdProvider>();
+        success = await provider.submitCarServiceAd(widget.adData!);
+        submissionError = provider.error;
       }
-      
-      final success = await provider.submitCarAd(
-        title: widget.adData!['title'],
-        description: widget.adData!['description'],
-        make: widget.adData!['make'],
-        model: widget.adData!['model'],
-        trim: widget.adData!['trim'],
-        year: widget.adData!['year'],
-        km: widget.adData!['km'],
-        price: widget.adData!['price'],
-        specs: widget.adData!['specs'],
-        carType: widget.adData!['carType'],
-        transType: widget.adData!['transType'],
-        fuelType: widget.adData!['fuelType'],
-        color: widget.adData!['color'],
-        interiorColor: widget.adData!['interiorColor'],
-        warranty: widget.adData!['warranty'],
-        engineCapacity: widget.adData!['engineCapacity'],
-        cylinders: widget.adData!['cylinders'],
-        horsepower: widget.adData!['horsepower'],
-        doorsNo: widget.adData!['doorsNo'],
-        seatsNo: widget.adData!['seatsNo'],
-        steeringSide: widget.adData!['steeringSide'],
-        advertiserName: widget.adData!['advertiserName'],
-        phoneNumber: widget.adData!['phoneNumber'],
-        whatsapp: widget.adData!['whatsapp'],
-        emirate: widget.adData!['emirate'],
-        area: widget.adData!['area'],
-        advertiserType: widget.adData!['advertiserType'],
-        mainImage: widget.adData!['mainImage'],
-        thumbnailImages: widget.adData!['thumbnailImages'],
-        planType: planType,
-        planDays: selectedAdOption.duration,
-        planExpiresAt: planExpiresAtString,
-      );
 
       if (!mounted) return;
-      
+
       if (success) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('تم نشر الإعلان بنجاح!'),
-            backgroundColor: Colors.green,
-          ),
-        );
-        // العودة إلى الصفحة الرئيسية مع إرسال إشارة النجاح
-        context.pop('success');
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم نشر الإعلان بنجاح!'), backgroundColor: Colors.green));
+        context.go('/home'); // أو العودة للصفحة الرئيسية
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(provider.createAdError ?? 'فشل في نشر الإعلان'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(submissionError ?? 'فشل في نشر الإعلان'), backgroundColor: Colors.red));
       }
+
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('حدث خطأ: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('حدث خطأ: $e'), backgroundColor: Colors.red));
       }
     } finally {
       if (mounted) {
-        setState(() {
-          _isSubmitting = false;
-        });
+        setState(() { _isSubmitting = false; });
       }
     }
-  }
+}
+
+  // دالة إرسال الإعلان مع نوع الإعلان المحدد
+  // Future<void> _submitAdWithType() async {
+  //   if (widget.adData == null) {
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       const SnackBar(
+  //         content: Text('لا توجد بيانات إعلان لإرسالها'),
+  //         backgroundColor: Colors.red,
+  //       ),
+  //     );
+  //     return;
+  //   }
+
+  //   setState(() {
+  //     _isSubmitting = true;
+  //   });
+
+  //   try {
+  //     final provider = context.read<CarAdProvider>();
+  //     final adOptions = _getAdOptions();
+  //     final selectedAdOption = adOptions[selectedOption];
+      
+  //     // حساب تاريخ انتهاء الباقة
+  //     final now = DateTime.now();
+  //     final expiresAt = now.add(Duration(days: selectedAdOption.duration));
+  //     final planExpiresAtString = expiresAt.toIso8601String();
+      
+  //     // تحديد نوع الباقة بناءً على العنوان
+  //     String planType;
+  //     if (selectedAdOption.title.contains('⭐')) {
+  //       planType = 'premium_star';
+  //     } else if (selectedAdOption.title.toLowerCase().contains('premium')) {
+  //       planType = 'premium';
+  //     } else if (selectedAdOption.title.toLowerCase().contains('featured')) {
+  //       planType = 'featured';
+  //     } else {
+  //       planType = 'free';
+  //     }
+      
+  //     final success = await provider.submitCarAd(
+  //       title: widget.adData!['title'],
+  //       description: widget.adData!['description'],
+  //       make: widget.adData!['make'],
+  //       model: widget.adData!['model'],
+  //       trim: widget.adData!['trim'],
+  //       year: widget.adData!['year'],
+  //       km: widget.adData!['km'],
+  //       price: widget.adData!['price'],
+  //       specs: widget.adData!['specs'],
+  //       carType: widget.adData!['carType'],
+  //       transType: widget.adData!['transType'],
+  //       fuelType: widget.adData!['fuelType'],
+  //       color: widget.adData!['color'],
+  //       interiorColor: widget.adData!['interiorColor'],
+  //       warranty: widget.adData!['warranty'],
+  //       engineCapacity: widget.adData!['engineCapacity'],
+  //       cylinders: widget.adData!['cylinders'],
+  //       horsepower: widget.adData!['horsepower'],
+  //       doorsNo: widget.adData!['doorsNo'],
+  //       seatsNo: widget.adData!['seatsNo'],
+  //       steeringSide: widget.adData!['steeringSide'],
+  //       advertiserName: widget.adData!['advertiserName'],
+  //       phoneNumber: widget.adData!['phoneNumber'],
+  //       whatsapp: widget.adData!['whatsapp'],
+  //       emirate: widget.adData!['emirate'],
+  //       area: widget.adData!['area'],
+  //       advertiserType: widget.adData!['advertiserType'],
+  //       mainImage: widget.adData!['mainImage'],
+  //       thumbnailImages: widget.adData!['thumbnailImages'],
+  //       planType: planType,
+  //       planDays: selectedAdOption.duration,
+  //       planExpiresAt: planExpiresAtString,
+  //     );
+
+  //     if (!mounted) return;
+      
+  //     if (success) {
+  //       ScaffoldMessenger.of(context).showSnackBar(
+  //         const SnackBar(
+  //           content: Text('تم نشر الإعلان بنجاح!'),
+  //           backgroundColor: Colors.green,
+  //         ),
+  //       );
+  //       // العودة إلى الصفحة الرئيسية مع إرسال إشارة النجاح
+  //       context.pop('success');
+  //     } else {
+  //       ScaffoldMessenger.of(context).showSnackBar(
+  //         SnackBar(
+  //           content: Text(provider.createAdError ?? 'فشل في نشر الإعلان'),
+  //           backgroundColor: Colors.red,
+  //         ),
+  //       );
+  //     }
+  //   } catch (e) {
+  //     if (mounted) {
+  //       ScaffoldMessenger.of(context).showSnackBar(
+  //         SnackBar(
+  //           content: Text('حدث خطأ: $e'),
+  //           backgroundColor: Colors.red,
+  //         ),
+  //       );
+  //     }
+  //   } finally {
+  //     if (mounted) {
+  //       setState(() {
+  //         _isSubmitting = false;
+  //       });
+  //     }
+  //   }
+  // }
 
   List<AdOption> _getAdOptions() {
     final s = S.of(context);

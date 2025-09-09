@@ -122,111 +122,111 @@ class _CarSalesAdScreenState extends State<CarSalesAdScreen> {
 
     // إظهار التنبيه إذا كانت هناك حقول ناقصة
     if (missingFields.isNotEmpty && mounted) {
-     // _showProfileIncompleteDialog(missingFields);
+      _showProfileIncompleteDialog(missingFields);
     }
   }
 
-  // دالة لإظهار تنبيه البيانات الناقصة
-  // void _showProfileIncompleteDialog(List<String> missingFields) {
-  //   showDialog(
-  //     context: context,
-  //     barrierDismissible: false,
-  //     builder: (BuildContext context) {
-  //       return WillPopScope(
-  //         onWillPop: () async {
-  //           // عند الضغط على زر الرجوع، الخروج من الصفحة بالكامل
-  //           Navigator.of(context).pop(); // إغلاق الـ dialog
-  //           Navigator.of(context).pop(); // العودة إلى الشاشة السابقة
-  //           return false;
-  //         },
-  //         child: AlertDialog(
-  //           backgroundColor: Colors.white,
-  //           shape: RoundedRectangleBorder(
-  //             borderRadius: BorderRadius.circular(16),
-  //           ),
-  //           title: const Text(
-  //             'بيانات البروفايل ناقصة',
-  //             style: TextStyle(
-  //               fontWeight: FontWeight.bold,
-  //               color: Color(0xFF01547E),
-  //               fontSize: 18,
-  //             ),
-  //           ),
-  //           content: Column(
-  //             mainAxisSize: MainAxisSize.min,
-  //             crossAxisAlignment: CrossAxisAlignment.start,
-  //             children: [
-  //               const Text(
-  //                 'يجب استكمال الحقول التالية في ملف التعريف الخاص بك قبل إضافة الإعلان:',
-  //                 style: TextStyle(
-  //                   fontSize: 16,
-  //                   color: Color(0xFF333333),
-  //                 ),
-  //               ),
-  //               const SizedBox(height: 15),
-  //               ...missingFields
-  //                   .map((field) => Padding(
-  //                         padding: const EdgeInsets.symmetric(vertical: 4),
-  //                         child: Row(
-  //                           children: [
-  //                             const Icon(
-  //                               Icons.error_outline,
-  //                               color: Color(0xFFE74C3C),
-  //                               size: 18,
-  //                             ),
-  //                             const SizedBox(width: 10),
-  //                             Expanded(
-  //                               child: Text(
-  //                                 field,
-  //                                 style: const TextStyle(
-  //                                   color: Color(0xFFE74C3C),
-  //                                   fontSize: 14,
-  //                                   fontWeight: FontWeight.w500,
-  //                                 ),
-  //                               ),
-  //                             ),
-  //                           ],
-  //                         ),
-  //                       ))
-  //                   .toList(),
-  //             ],
-  //           ),
-  //           actions: [
-  //             SizedBox(
-  //               width: double.infinity,
-  //               child: ElevatedButton(
-  //                 onPressed: () {
-  //                  context.push('/editprofile');
+ // دالة لإظهار تنبيه البيانات الناقصة
+  void _showProfileIncompleteDialog(List<String> missingFields) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return WillPopScope(
+          onWillPop: () async {
+            // عند الضغط على زر الرجوع، الخروج من الصفحة بالكامل
+            Navigator.of(context).pop(); // إغلاق الـ dialog
+            Navigator.of(context).pop(); // العودة إلى الشاشة السابقة
+            return false;
+          },
+          child: AlertDialog(
+            backgroundColor: Colors.white,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            title: const Text(
+              'بيانات البروفايل ناقصة',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF01547E),
+                fontSize: 18,
+              ),
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'يجب استكمال الحقول التالية في ملف التعريف الخاص بك قبل إضافة الإعلان:',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Color(0xFF333333),
+                  ),
+                ),
+                const SizedBox(height: 15),
+                ...missingFields
+                    .map((field) => Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 4),
+                          child: Row(
+                            children: [
+                              const Icon(
+                                Icons.error_outline,
+                                color: Color(0xFFE74C3C),
+                                size: 18,
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Text(
+                                  field,
+                                  style: const TextStyle(
+                                    color: Color(0xFFE74C3C),
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ))
+                    .toList(),
+              ],
+            ),
+            actions: [
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () {
+                   context.push('/editprofile');
 
-  //                   Navigator.of(context).pop();
-  //                   // الانتقال إلى صفحة تعديل البروفايل
-  //                   // Navigator.of(context).pushNamed('/editprofile');
-  //                 },
-  //                 style: ElevatedButton.styleFrom(
-  //                   backgroundColor: const Color.fromRGBO(8, 194, 201, 1),
-  //                   foregroundColor: Colors.white,
-  //                   padding: const EdgeInsets.symmetric(vertical: 14),
-  //                   shape: RoundedRectangleBorder(
-  //                     borderRadius: BorderRadius.circular(8),
-  //                   ),
-  //                   elevation: 2,
-  //                 ),
-  //                 child: const Text(
-  //                   'Go to Profile',
-  //                   style: TextStyle(
-  //                     color: Colors.white,
-  //                     fontSize: 16,
-  //                     fontWeight: FontWeight.w600,
-  //                   ),
-  //                 ),
-  //               ),
-  //             ),
-  //           ],
-  //         ),
-  //       );
-  //     },
-  //   );
-  // }
+                    Navigator.of(context).pop();
+                    // الانتقال إلى صفحة تعديل البروفايل
+                    // Navigator.of(context).pushNamed('/editprofile');
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color.fromRGBO(8, 194, 201, 1),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    elevation: 2,
+                  ),
+                  child: const Text(
+                    'Go to Profile',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
 
   String? selectedMake, selectedModel, selectedTrim;
   String? selectedSpec, selectedCarType, selectedTransType;
@@ -627,6 +627,7 @@ class _CarSalesAdScreenState extends State<CarSalesAdScreen> {
     final provider = context.read<CarAdProvider>();
 
     final success = await provider.submitCarAd(
+      adData, // المعامل الأول المطلوب
       title: adData['title'],
       description: adData['description'],
       make: adData['make'],
