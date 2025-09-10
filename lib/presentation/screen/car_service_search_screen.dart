@@ -1,5 +1,6 @@
 // lib/presentation/screens/car_service_search_screen.dart
 
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:advertising_app/generated/l10n.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -11,6 +12,7 @@ import 'package:advertising_app/data/model/favorite_item_interface_model.dart';
 import 'package:provider/provider.dart';
 import 'package:advertising_app/data/model/car_service_ad_model.dart';
 import 'package:advertising_app/presentation/providers/car_services_provider.dart';
+import 'package:advertising_app/presentation/providers/car_services_info_provider.dart';
 import 'package:advertising_app/utils/number_formatter.dart';
 import 'package:advertising_app/constant/image_url_helper.dart';
 
@@ -25,14 +27,14 @@ class CarServiceAdCardAdapter implements FavoriteItemInterface {
   CarServiceAdCardAdapter(this._ad);
 
   @override String get contact => _ad.advertiserName;
-  @override String get details => _ad.description;
+  @override String get details => _ad.serviceType;
   @override String get imageUrl => ImageUrlHelper.getMainImageUrl(_ad.mainImage ?? '');
   @override List<String> get images => [ ImageUrlHelper.getMainImageUrl(_ad.mainImage ?? ''), ...ImageUrlHelper.getThumbnailImageUrls(_ad.thumbnailImages) ].where((img) => img.isNotEmpty).toList();
-  @override String get line1 => _ad.serviceName;
+  @override String get line1 => _ad.title;
   @override String get line2 => _ad.title;
   @override String get price => "${NumberFormatter.formatPrice(_ad.price)} AED";
-  @override String get location => "${_ad.emirate} ${_ad.district}";
-  @override String get title => _ad.title;
+  @override String get location => "${_ad.emirate} ${_ad.district} / ${_ad.area} ";
+  @override String get title => _ad.serviceName;
   @override String get date => _ad.createdAt?.split('T').first ?? '';
 
   @override
@@ -60,10 +62,10 @@ class _CarServiceSearchScreenState extends State<CarServiceSearchScreen> with Au
   final ScrollController _scrollController = ScrollController();
   bool _showFloatingFilterBar = false;
   double _lastScrollOffset = 0;
+  Timer? _debounce;
   
   List<String> _selectedServiceTypes = [];
   List<String> _selectedDistricts = [];
-  String? _priceFrom, _priceTo;
 
   @override
   bool get wantKeepAlive => true;
@@ -73,15 +75,75 @@ class _CarServiceSearchScreenState extends State<CarServiceSearchScreen> with Au
     super.initState();
     _scrollController.addListener(_handleScroll);
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      print('=== INIT STATE DEBUG ===');
+      print('Initial filters from widget: ${widget.initialFilters}');
+      print('========================');
+      
+      // التأكد من توفر بيانات الإمارات والمناطق
+      final infoProvider = context.read<CarServicesInfoProvider>();
+      if (infoProvider.emirateDisplayNames.isEmpty) {
+        // جلب البيانات إذا لم تكن متوفرة
+        infoProvider.fetchLandingPageData(token: 'dummy_token');
+      }
+      
+      // تحديث الإمارة المختارة في InfoProvider بناءً على الفلاتر الأولية
+      if (widget.initialFilters != null && widget.initialFilters!.containsKey('emirate')) {
+        final emirate = widget.initialFilters!['emirate'];
+        infoProvider.updateSelectedEmirate(emirate);
+      }
+      
+      // تحديث نوع الخدمة المختار في InfoProvider بناءً على الفلاتر الأولية
+      if (widget.initialFilters != null && widget.initialFilters!.containsKey('service_type')) {
+        final serviceType = widget.initialFilters!['service_type'];
+        infoProvider.updateSelectedServiceType(serviceType);
+      }
+      
       // استخدام الفلاتر المرسلة عند جلب البيانات
-      context.read<CarServicesProvider>().fetchAds(filters: widget.initialFilters);
+      context.read<CarServicesProvider>().applyAndFetchAds(initialFilters: widget.initialFilters);
     });
   }
 
   @override
   void dispose() {
     _scrollController.dispose();
+    _debounce?.cancel();
     super.dispose();
+  }
+
+  void _applyAndSearchWithDebounce() {
+    if (_debounce?.isActive ?? false) _debounce!.cancel();
+    _debounce = Timer(const Duration(milliseconds: 800), () {
+      _applyFiltersAndFetch();
+    });
+  }
+
+  void _applyFiltersAndFetch() {
+    Map<String, String> filters = {};
+    
+    // إضافة الفلاتر الأولية إن وجدت
+    if (widget.initialFilters != null) {
+      filters.addAll(widget.initialFilters!);
+    }
+    
+    // إضافة فلاتر الإمارة ونوع الخدمة من CarServicesInfoProvider
+    final infoProvider = context.read<CarServicesInfoProvider>();
+    final formattedFilters = infoProvider.getFormattedFilters();
+    filters.addAll(formattedFilters);
+    
+    // إضافة الفلاتر المحددة (تجاهل إذا كانت تتعارض مع الفلاتر الأولية)
+    if (_selectedServiceTypes.isNotEmpty && !filters.containsKey('service_name')) {
+      filters['service_name'] = _selectedServiceTypes.join(',');
+    }
+    if (_selectedDistricts.isNotEmpty) {
+      filters['district'] = _selectedDistricts.join(',');
+    }
+    // فلتر السعر يتم تطبيقه محلياً في CarServicesProvider
+    
+    print('=== FINAL FILTERS DEBUG ===');
+    print('Final filters being applied: $filters');
+    print('============================');
+    
+    context.read<CarServicesProvider>().applyAndFetchAds(initialFilters: filters);
   }
 
   void _handleScroll() {
@@ -118,7 +180,7 @@ class _CarServiceSearchScreenState extends State<CarServiceSearchScreen> with Au
               return Stack(
                 children: [
                   RefreshIndicator(
-                    onRefresh: () async => provider.fetchAds(filters: widget.initialFilters),
+                    onRefresh: () async => provider.applyAndFetchAds(initialFilters: widget.initialFilters),
                     child: SingleChildScrollView(
                       key: const PageStorageKey('car_service_search_scroll'),
                       controller: _scrollController,
@@ -266,15 +328,53 @@ class _CarServiceSearchScreenState extends State<CarServiceSearchScreen> with Au
   Widget _buildCard(CarServiceModel item) {
     return GestureDetector(
       onTap: () {
-        // Future: context.push('/car-service-details/${item.id}');
+        context.push('/car-service-details', extra: item);
       },
       child: Directionality(
         textDirection: TextDirection.ltr,
         child: SearchCard(
           item: CarServiceAdCardAdapter(item),
           showDelete: false,
-          onAddToFavorite: () {},
+          onAddToFavorite: () {
+            // زر المفضلة بدون وظيفة حالياً
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('تم إضافة الإعلان للمفضلة')),
+            );
+          },
           onDelete: () {},
+          // تمرير الأزرار المخصصة مع الوظائف
+          customActionButtons: [
+            _buildActionIcon(Icons.phone, onTap: () {
+              // يمكن إضافة وظيفة الاتصال هنا
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('سيتم إضافة وظيفة الاتصال قريباً')),
+              );
+            }),
+            const SizedBox(width: 5),
+            _buildActionIcon(Icons.message, onTap: () {
+              // يمكن إضافة وظيفة الرسائل هنا
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('سيتم إضافة وظيفة الرسائل قريباً')),
+              );
+            }),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildActionIcon(IconData icon, {required VoidCallback onTap}) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        height: 35.h,
+        width: 62.w,
+        decoration: BoxDecoration(
+          color: const Color(0xFF01547E),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Center(
+          child: Icon(icon, color: Colors.white, size: 22),
         ),
       ),
     );
@@ -289,19 +389,75 @@ class _CarServiceSearchScreenState extends State<CarServiceSearchScreen> with Au
           SizedBox(width: 5.w),
           Expanded(child: Row(
               children: [
-                Flexible(flex: 4, child: _buildMultiSelectField(context, s.service_type, _selectedServiceTypes, 
-                // البيانات هنا ثابتة حاليا، سيتم ربطها بـ Provider في التحديثات القادمة
-                const ["Car Wash", "Oil Change", "Tire Service", "Mechanical Repair", "Detailing"], 
-                (selection) => setState(() => _selectedServiceTypes = selection), isFilter: true)),
-                SizedBox(width: 2.w),
-                Flexible(flex: 4, child: _buildMultiSelectField(context, s.district, _selectedDistricts,
-                const ["Dubai", "Abu Dhabi", "Sharjah"],
-                (selection) => setState(() => _selectedDistricts = selection), isFilter: true)),
-                SizedBox(width: 2.w),
-                Flexible(flex: 4, child: _buildRangePickerField(context, title: s.price, fromValue: _priceFrom, toValue: _priceTo, unit: "AED", isFilter: true, onTap: () async {
-                      final result = await _showRangePicker(context, title: s.price, initialFrom: _priceFrom, initialTo: _priceTo, unit: "AED");
-                      if (result != null) { setState(() { _priceFrom = result['from']; _priceTo = result['to']; });}
-                    })),
+                Flexible(flex: 4, child: Consumer<CarServicesProvider>(
+                  builder: (context, provider, child) {
+                    // الحصول على أسماء الخدمات من الإعلانات المعروضة حالياً
+                    final currentAds = provider.ads;
+                    final availableServiceNames = currentAds
+                        .map((ad) => ad.serviceName)
+                        .where((name) => name != null && name.isNotEmpty)
+                        .toSet()
+                        .toList();
+                    
+                    return _buildMultiSelectField(
+                      context, 
+                      s.service_type, 
+                      _selectedServiceTypes,
+                      availableServiceNames,
+                      (selection) {
+                        setState(() => _selectedServiceTypes = selection);
+                        _applyAndSearchWithDebounce();
+                      }, 
+                      isFilter: true
+                    );
+                  },
+                 )),
+                 SizedBox(width: 2.w),
+                Flexible(flex: 4, child: Consumer<CarServicesInfoProvider>(
+                  builder: (context, infoProvider, child) {
+                    // الحصول على المناطق بناءً على الإمارة المختارة
+                    final availableDistricts = infoProvider.selectedEmirate != null 
+                        ? infoProvider.getDistrictsForEmirate(infoProvider.selectedEmirate)
+                        : <String>[];
+                    
+                    return _buildMultiSelectField(
+                      context, 
+                      s.district, 
+                      _selectedDistricts,
+                      availableDistricts,
+                      (selection) {
+                        setState(() => _selectedDistricts = selection);
+                        _applyAndSearchWithDebounce();
+                      }, 
+                      isFilter: true
+                    );
+                  },
+                 )),
+                 SizedBox(width: 2.w),
+                Flexible(flex: 4, child: Consumer<CarServicesProvider>(
+                  builder: (context, provider, child) {
+                    return _buildRangePickerField(
+                      context, 
+                      title: s.price, 
+                      fromValue: provider.priceFrom, 
+                      toValue: provider.priceTo, 
+                      unit: "AED", 
+                      isFilter: true, 
+                      onTap: () async {
+                        final result = await _showRangePicker(
+                          context, 
+                          title: s.price, 
+                          initialFrom: provider.priceFrom, 
+                          initialTo: provider.priceTo, 
+                          unit: "AED"
+                        );
+                        if (result != null) {
+                          provider.updatePriceRange(result['from'], result['to']);
+                        }
+                      }
+                    );
+                  },
+                )),
               ],
             ),
           ),

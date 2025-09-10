@@ -83,15 +83,43 @@ class _CarServiceState extends State<CarService> {
                         children: [
                           Row(children: [ Icon(Icons.star, color: Colors.amber, size: 20.sp), SizedBox(width: 6.w), Text(s.discover_car_service, textAlign: TextAlign.start, style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14.sp, color: KTextColor))]),
                           SizedBox(height: 4.h),
-                          _buildMultiSelectField(context, s.emirate, provider.selectedEmirateNames, provider.emirateDisplayNames, (selection) => provider.updateSelectedEmirates(selection), isLoading: provider.isLoadingFilters),
+                          _buildSingleSelectField(context, s.emirate, provider.selectedEmirate, provider.emirateDisplayNames, (selection) => provider.updateSelectedEmirate(selection), isLoading: provider.isLoadingFilters),
                           SizedBox(height: 3.h),
-                          _buildMultiSelectField(context, s.serviceType, provider.selectedServiceTypeNames, provider.serviceTypeDisplayNames, (selection) => provider.updateSelectedServiceTypes(selection), isLoading: provider.isLoadingFilters),
+                          _buildSingleSelectField(context, s.serviceType, provider.selectedServiceType, provider.serviceTypeDisplayNames, (selection) => provider.updateSelectedServiceType(selection), isLoading: provider.isLoadingFilters),
                           SizedBox(height: 4.h),
                           Padding(
                             padding: EdgeInsetsDirectional.symmetric(horizontal: 8.w),
                             child: GestureDetector(
                               onTap: () {
+                                // التحقق من اختيار الإمارة ونوع الخدمة
+                                if (provider.selectedEmirate == null || provider.selectedEmirate!.isEmpty) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text('Please select an emirate'),
+                                      backgroundColor: Colors.red,
+                                      duration: const Duration(seconds: 2),
+                                    ),
+                                  );
+                                  return;
+                                }
+                                if (provider.selectedServiceType == null || provider.selectedServiceType!.isEmpty) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text('Please select a service type'),
+                                      backgroundColor: Colors.red,
+                                      duration: const Duration(seconds: 2),
+                                    ),
+                                  );
+                                  return;
+                                }
+                                
                                 final filters = provider.getFormattedFilters();
+                                print('=== NAVIGATION FILTERS DEBUG ===');
+                                print('Filters from main page: $filters');
+                                print('Selected Emirate: ${provider.selectedEmirate}');
+                                print('Selected Service Type: ${provider.selectedServiceType}');
+                                print('================================');
+                                
                                 // إرسال الفلاتر إلى صفحة البحث
                                 context.push('/car_service_search', extra: filters);
                               },
@@ -168,8 +196,14 @@ class _CarServiceState extends State<CarService> {
                                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                                 children: [
                                   Text("${NumberFormatter.formatPrice(ad.price)} AED", style: TextStyle(color: Colors.red, fontWeight: FontWeight.w600, fontSize: 11.5.sp)),
-                                  Text(ad.price ?? ad.advertiserName?? 'Service', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 11.5.sp, color: KTextColor), maxLines: 2, overflow: TextOverflow.ellipsis),
-                                  Text(ad.advertiserName ?? '', style: TextStyle(fontSize: 11.5.sp, color: const Color.fromRGBO(165, 164, 162, 1), fontWeight: FontWeight.w600)),
+                                  Text(ad.serviceName ?? 'Service', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 11.5.sp, color: KTextColor), maxLines: 2, overflow: TextOverflow.ellipsis),
+                                  Row(
+                                    children: [
+                                      Text(ad.serviceType ?? '', style: TextStyle(fontSize: 11.5.sp, color: const Color.fromRGBO(165, 164, 162, 1), fontWeight: FontWeight.w600)),
+                                      SizedBox(width: 8.w),
+                                      Text("${ad.district ?? ''}", style: TextStyle(fontSize: 11.5.sp, color: const Color.fromRGBO(165, 164, 162, 1), fontWeight: FontWeight.w600)),
+                                    ],
+                                  ),
                                 ],
                               ),
                             ),
@@ -189,22 +223,22 @@ class _CarServiceState extends State<CarService> {
 }
 
 // +++ ودجتس بناء الحقول المعاد استخدامها +++
-Widget _buildMultiSelectField(BuildContext context, String title, List<String> selectedValues, List<String> allItems, Function(List<String>) onConfirm, {bool isLoading = false}) {
-    String displayText = isLoading ? 'Loading...' : (selectedValues.isEmpty ? title : selectedValues.join(', '));
+Widget _buildSingleSelectField(BuildContext context, String title, String? selectedValue, List<String> allItems, Function(String?) onConfirm, {bool isLoading = false}) {
+    String displayText = isLoading ? 'Loading...' : (selectedValue?.isEmpty ?? true ? title : selectedValue!);
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 8.w),
       child: GestureDetector(
         onTap: isLoading || allItems.isEmpty ? null : () async {
-          final result = await showModalBottomSheet<List<String>>(context: context, backgroundColor: Colors.white, isScrollControlled: true, shape: RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-            builder: (context) => _MultiSelectBottomSheet(title: title, items: allItems, initialSelection: selectedValues),
+          final result = await showModalBottomSheet<String>(context: context, backgroundColor: Colors.white, isScrollControlled: true, shape: RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+            builder: (context) => _SingleSelectBottomSheet(title: title, items: allItems, initialSelection: selectedValue),
           );
-          if (result != null) { onConfirm(result); }
+          onConfirm(result);
         },
         child: Container(
           height: 48, width: double.infinity, padding: const EdgeInsets.symmetric(horizontal: 16), alignment: Alignment.centerLeft,
           decoration: BoxDecoration(color: Colors.white, border: Border.all(color: borderColor), borderRadius: BorderRadius.circular(8)),
           child: Row(children: [
-              Expanded(child: Text(displayText, style: TextStyle(fontWeight: FontWeight.w500, color: selectedValues.isEmpty && !isLoading ? Colors.grey.shade500 : KTextColor, fontSize: 12.sp), overflow: TextOverflow.ellipsis)),
+              Expanded(child: Text(displayText, style: TextStyle(fontWeight: FontWeight.w500, color: (selectedValue?.isEmpty ?? true) && !isLoading ? Colors.grey.shade500 : KTextColor, fontSize: 12.sp), overflow: TextOverflow.ellipsis)),
               if (isLoading) const SizedBox(width: 15, height: 15, child: CircularProgressIndicator(strokeWidth: 2)),
             ],
           ),
@@ -214,17 +248,17 @@ Widget _buildMultiSelectField(BuildContext context, String title, List<String> s
 }
 
 // ... كلاس _MultiSelectBottomSheet يبقى كما هو ...
-class _MultiSelectBottomSheet extends StatefulWidget {
-  final String title; final List<String> items; final List<String> initialSelection;
-  const _MultiSelectBottomSheet({required this.title, required this.items, required this.initialSelection});
-  @override _MultiSelectBottomSheetState createState() => _MultiSelectBottomSheetState();
+class _SingleSelectBottomSheet extends StatefulWidget {
+  final String title; final List<String> items; final String? initialSelection;
+  const _SingleSelectBottomSheet({required this.title, required this.items, required this.initialSelection});
+  @override _SingleSelectBottomSheetState createState() => _SingleSelectBottomSheetState();
 }
-class _MultiSelectBottomSheetState extends State<_MultiSelectBottomSheet> {
-  late final List<String> _selectedItems; final TextEditingController _searchController = TextEditingController(); List<String> _filteredItems = [];
-  @override void initState() { super.initState(); _selectedItems = List.from(widget.initialSelection); _filteredItems = List.from(widget.items); _searchController.addListener(_filterItems); }
+class _SingleSelectBottomSheetState extends State<_SingleSelectBottomSheet> {
+  String? _selectedItem; final TextEditingController _searchController = TextEditingController(); List<String> _filteredItems = [];
+  @override void initState() { super.initState(); _selectedItem = widget.initialSelection; _filteredItems = List.from(widget.items); _searchController.addListener(_filterItems); }
   @override void dispose() { _searchController.dispose(); super.dispose(); }
   void _filterItems() { final query = _searchController.text.toLowerCase(); setState(() { _filteredItems = widget.items.where((item) => item.toLowerCase().contains(query)).toList(); });}
-  void _onItemTapped(String item) { setState(() { if (_selectedItems.contains(item)) { _selectedItems.remove(item); } else { _selectedItems.add(item); }});}
+  void _onItemTapped(String item) { setState(() { _selectedItem = item; });}
   @override Widget build(BuildContext context) {
     final s = S.of(context);
     return Padding(
@@ -234,9 +268,9 @@ class _MultiSelectBottomSheetState extends State<_MultiSelectBottomSheet> {
               Text(widget.title, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18.sp, color: KTextColor)), const SizedBox(height: 16),
               TextFormField(controller: _searchController, style: const TextStyle(color: KTextColor), decoration: InputDecoration(hintText: s.search, prefixIcon: const Icon(Icons.search, color: KTextColor), hintStyle: TextStyle(color: KTextColor.withOpacity(0.5)), enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: borderColor)), focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: KPrimaryColor, width: 2)))),
               const SizedBox(height: 8), const Divider(),
-              Expanded(child: _filteredItems.isEmpty ? Center(child: Text(s.noResultsFound, style: const TextStyle(color: KTextColor))) : ListView.builder(itemCount: _filteredItems.length, itemBuilder: (context, index) { final item = _filteredItems[index]; return CheckboxListTile(title: Text(item, style: const TextStyle(color: KTextColor)), value: _selectedItems.contains(item), activeColor: KPrimaryColor, controlAffinity: ListTileControlAffinity.leading, onChanged: (_) => _onItemTapped(item));})),
+              Expanded(child: _filteredItems.isEmpty ? Center(child: Text(s.noResultsFound, style: const TextStyle(color: KTextColor))) : ListView.builder(itemCount: _filteredItems.length, itemBuilder: (context, index) { final item = _filteredItems[index]; return RadioListTile<String>(title: Text(item, style: const TextStyle(color: KTextColor)), value: item, groupValue: _selectedItem, activeColor: KPrimaryColor, controlAffinity: ListTileControlAffinity.leading, onChanged: (value) => _onItemTapped(value!));})),
               const SizedBox(height: 16),
-              SizedBox(width: double.infinity, child: ElevatedButton(onPressed: () => Navigator.pop(context, _selectedItems), child: Text(s.apply, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)), style: ElevatedButton.styleFrom(backgroundColor: KPrimaryColor, padding: const EdgeInsets.symmetric(vertical: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))))),
+              SizedBox(width: double.infinity, child: ElevatedButton(onPressed: () => Navigator.pop(context, _selectedItem), child: Text(s.apply, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)), style: ElevatedButton.styleFrom(backgroundColor: KPrimaryColor, padding: const EdgeInsets.symmetric(vertical: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))))),
               const SizedBox(height: 16)
             ]),
         ),

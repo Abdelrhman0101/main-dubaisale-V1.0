@@ -3,7 +3,7 @@ import 'package:advertising_app/presentation/screen/car_services_ad_screen.dart'
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:advertising_app/data/model/car_rent_model.dart';
 import 'package:advertising_app/data/model/car_sale_model.dart';
-import 'package:advertising_app/data/model/car_service_model.dart';
+import 'package:advertising_app/data/model/car_service_ad_model.dart';
 import 'package:advertising_app/data/model/electronic_model.dart';
 import 'package:advertising_app/data/model/job_model.dart';
 import 'package:advertising_app/data/model/other_service_model.dart';
@@ -209,7 +209,10 @@ GoRouter createRouter({
        GoRoute(path: '/real_estate_search', builder: (context, state) => RealEstateSearchScreen()),
        GoRoute(path: '/electronic_search', builder: (context, state) => ElectronicSearchScreen()),
        GoRoute(path: '/car_rent_search', builder: (context, state) => CarRentSearchScreen()),
-       GoRoute(path: '/car_service_search', builder: (context, state) => CarServiceSearchScreen()),
+       GoRoute(path: '/car_service_search', builder: (context, state) {
+         final filters = state.extra as Map<String, String>?;
+         return CarServiceSearchScreen(initialFilters: filters);
+       }),
        GoRoute(path: '/restaurant_search', builder: (context, state) => RestaurantSearchScreen()),
        GoRoute(path: '/other_service_search', builder: (context, state) => OtherServiceSearchScreen()),
        GoRoute(path: '/job_search', builder: (context, state) => JobSearchScreen()),

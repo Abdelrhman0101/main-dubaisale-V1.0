@@ -30,14 +30,15 @@ class CarServicesInfoProvider extends ChangeNotifier {
   List<String> _advertiserNames = [];
   List<String> _phoneNumbers = [];
   List<String> _whatsappNumbers = [];
+  List<String> _locations = [];
 
   // --- Getters لتوفير البيانات للـ UI ---
 
   // يرجع قائمة بأسماء الخدمات للعرض
-  List<String> get serviceTypeNames => _serviceTypes.map((e) => e.displayName).toList();
+  List<String> get serviceTypeNames => _serviceTypes.map((e) => e.name).toList();
   
   // يرجع قائمة بأسماء الإمارات للعرض
-  List<String> get emirateNames => _emirates.map((e) => e.displayName).toList();
+  List<String> get emirateNames => _emirates.map((e) => e.name).toList();
   
   // يرجع قائمة بالمناطق لإمارة محددة
   List<String> getDistrictsForEmirate(String? emirateDisplayName) {
@@ -45,7 +46,7 @@ class CarServicesInfoProvider extends ChangeNotifier {
     
     // البحث عن الإمارة باستخدام displayName للعثور على الاسم الحقيقي
     final emirate = _emirates.firstWhere(
-      (e) => e.displayName == emirateDisplayName,
+      (e) => e.name == emirateDisplayName,
       orElse: () => EmirateModel(name: '', displayName: '', districts: []),
     );
 
@@ -55,6 +56,7 @@ class CarServicesInfoProvider extends ChangeNotifier {
   List<String> get advertiserNames => _advertiserNames;
   List<String> get phoneNumbers => _phoneNumbers;
   List<String> get whatsappNumbers => _whatsappNumbers;
+  List<String> get locations => _locations;
 
 
   // --- دوال جلب البيانات من الـ API ---
@@ -97,6 +99,7 @@ class CarServicesInfoProvider extends ChangeNotifier {
         _advertiserNames = data['advertiser_names'] != null ? List<String>.from(data['advertiser_names']) : [];
         _phoneNumbers = data['phone_numbers'] != null ? List<String>.from(data['phone_numbers']) : [];
         _whatsappNumbers = data['whatsapp_numbers'] != null ? List<String>.from(data['whatsapp_numbers']) : [];
+        _locations = data['locations'] != null ? List<String>.from(data['locations']) : [];
       } else {
         throw Exception('API returned success: false or data is null');
       }
@@ -145,12 +148,12 @@ class CarServicesInfoProvider extends ChangeNotifier {
   // دالة لتحويل displayName (مثل "دبي") إلى name (مثل "Dubai") لإرساله للـ API
   String? getServiceNameFromDisplayName(String? displayName) {
     if (displayName == null) return null;
-    return _serviceTypes.firstWhere((e) => e.displayName == displayName, orElse: () => ServiceTypeModel(name: '', displayName: '')).name;
+    return _serviceTypes.firstWhere((e) => e.name == displayName, orElse: () => ServiceTypeModel(name: '', displayName: '')).name;
   }
   
   String? getEmirateNameFromDisplayName(String? displayName) {
      if (displayName == null) return null;
-    return _emirates.firstWhere((e) => e.displayName == displayName, orElse: () => EmirateModel(name: '', displayName: '', districts: [])).name;
+    return _emirates.firstWhere((e) => e.name == displayName, orElse: () => EmirateModel(name: '', displayName: '', districts: [])).name;
   }
 
 
@@ -168,45 +171,69 @@ class CarServicesInfoProvider extends ChangeNotifier {
   // --- قوائم البيانات ---
   List<BestAdvertiser> _topGarages = [];
 
-  // +++ متغيرات لحفظ الفلاتر المختارة +++
-  List<EmirateModel> _selectedEmirates = [];
-  List<ServiceTypeModel> _selectedServiceTypes = [];
+  // +++ متغيرات لحفظ الفلاتر المختارة (اختيار واحد فقط) +++
+  String? _selectedEmirate;
+  String? _selectedServiceType;
 
   // --- Getters لتوفير البيانات للـ UI ---
-  List<String> get serviceTypeDisplayNames => _serviceTypes.map((e) => e.displayName).toList();
-  List<String> get emirateDisplayNames => _emirates.map((e) => e.displayName).toList();
+  List<String> get serviceTypeDisplayNames {
+    final List<String> names = ['All', ..._serviceTypes.map((e) => e.name).toList(), 'Other'];
+    return names;
+  }
+  
+  List<String> get emirateDisplayNames {
+    final List<String> names = ['All', ..._emirates.map((e) => e.name).toList(), 'Other'];
+    return names;
+  }
   List<BestAdvertiser> get topGarages => _topGarages;
 
-  List<String> get selectedEmirateNames => _selectedEmirates.map((e) => e.displayName).toList();
-  List<String> get selectedServiceTypeNames => _selectedServiceTypes.map((e) => e.displayName).toList();
+  String? get selectedEmirate => _selectedEmirate;
+  String? get selectedServiceType => _selectedServiceType;
 
 
   // --- دوال تحديث الفلاتر ---
-  void updateSelectedEmirates(List<String> selectedNames) {
-    _selectedEmirates = _emirates.where((e) => selectedNames.contains(e.displayName)).toList();
+  void updateSelectedEmirate(String? selectedName) {
+    _selectedEmirate = selectedName;
     notifyListeners();
   }
 
-  void updateSelectedServiceTypes(List<String> selectedNames) {
-    _selectedServiceTypes = _serviceTypes.where((st) => selectedNames.contains(st.displayName)).toList();
+  void updateSelectedServiceType(String? selectedName) {
+    _selectedServiceType = selectedName;
     notifyListeners();
   }
   
   // +++ دالة لتجهيز الفلاتر للـ API +++
   Map<String, String> getFormattedFilters() {
     final Map<String, String> filters = {};
-    if (_selectedEmirates.isNotEmpty) {
-      filters['emirate'] = _selectedEmirates.map((e) => e.name).join(',');
+    
+    // التعامل مع الإمارة
+    if (_selectedEmirate != null && _selectedEmirate!.isNotEmpty) {
+      if (_selectedEmirate != 'All' && _selectedEmirate != 'Other') {
+        filters['emirate'] = _selectedEmirate!;
+      } else if (_selectedEmirate == 'All') {
+        // عند اختيار All، لا نضيف فلتر للإمارة (يعرض الكل)
+      } else if (_selectedEmirate == 'Other') {
+        filters['emirate'] = 'Other';
+      }
     }
-    if (_selectedServiceTypes.isNotEmpty) {
-      filters['service_type'] = _selectedServiceTypes.map((st) => st.name).join(',');
+    
+    // التعامل مع نوع الخدمة
+    if (_selectedServiceType != null && _selectedServiceType!.isNotEmpty) {
+      if (_selectedServiceType != 'All' && _selectedServiceType != 'Other') {
+        filters['service_type'] = _selectedServiceType!;
+      } else if (_selectedServiceType == 'All') {
+        // عند اختيار All، لا نضيف فلتر لنوع الخدمة (يعرض الكل)
+      } else if (_selectedServiceType == 'Other') {
+        filters['service_type'] = 'Other';
+      }
     }
+    
     return filters;
   }
   
   void clearFilters() {
-    _selectedEmirates.clear();
-    _selectedServiceTypes.clear();
+    _selectedEmirate = null;
+    _selectedServiceType = null;
     notifyListeners();
   }
 
@@ -222,6 +249,7 @@ class CarServicesInfoProvider extends ChangeNotifier {
       final fetchedEmirates = await _repository.getEmirates(token: token);
       _serviceTypes = fetchedServiceTypes;
       _emirates = fetchedEmirates;
+      _buildEmirateDistrictsMap(); // بناء خريطة الإمارات والمناطق
       _filtersError = null;
     } catch (e) {
       _filtersError = e.toString();
@@ -231,8 +259,8 @@ class CarServicesInfoProvider extends ChangeNotifier {
     }
 
     try {
-      // جلب أفضل الكراجات
-      _topGarages = await _repository.getTopGarages(token: token);
+      // جلب أفضل الكراجات مع فلترة حسب الـ category
+      _topGarages = await _repository.getTopGarages(token: token, category: 'car_services');
       _topGaragesError = null;
     } catch (e) {
       _topGaragesError = e.toString();

@@ -306,6 +306,10 @@ class _HomeScreenState extends State<HomeScreen> {
     final s = S.of(context);
     if (provider.isLoadingTopDealers && provider.topDealerAds.isEmpty)
       return const Center(heightFactor: 5, child: CircularProgressIndicator());
+    
+    if (provider.topDealersError != null) {
+      return Center(child: Padding(padding: const EdgeInsets.all(16.0), child: Text(provider.topDealersError!)));
+    }
 
     final dealersWithAds =
         provider.topDealerAds.where((dealer) => dealer.ads.isNotEmpty).toList();

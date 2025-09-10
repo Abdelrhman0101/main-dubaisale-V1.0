@@ -1,9 +1,14 @@
 import 'package:advertising_app/data/car_sevice_dummy_data.dart';
 import 'package:advertising_app/generated/l10n.dart';
+import 'package:advertising_app/constant/image_url_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
+import 'package:advertising_app/presentation/providers/car_services_offers_provider.dart';
+import 'package:advertising_app/data/model/car_service_ad_model.dart';
+import 'dart:async';
 
 
 // تعريف الثوابت المستخدمة في الألوان
@@ -24,8 +29,51 @@ class _CarServiceOfferBoxState extends State<CarServiceOfferBox> {
   List<String> _selectedServiceTypes = [];
   List<String> _selectedDistricts = [];
   String? _priceFrom, _priceTo;
+  Timer? _debounce;
 
- 
+  @override
+  void initState() {
+    super.initState();
+    // جلب البيانات عند تحميل الصفحة
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<CarServicesOffersProvider>().fetchOfferAds();
+    });
+  }
+
+  @override
+  void dispose() {
+    _debounce?.cancel();
+    super.dispose();
+  }
+
+  void _applyAndSearchWithDebounce() {
+    if (_debounce?.isActive ?? false) _debounce!.cancel();
+    _debounce = Timer(const Duration(milliseconds: 800), () {
+      _applyFiltersAndFetch();
+    });
+  }
+
+  void _applyFiltersAndFetch() {
+    final provider = context.read<CarServicesOffersProvider>();
+    
+    // تطبيق جميع الفلاتر معاً
+    provider.applyFilters(
+      serviceNames: _selectedServiceTypes,
+      districts: _selectedDistricts,
+      priceFromValue: _priceFrom,
+      priceToValue: _priceTo,
+    );
+  }
+
+  void _applyFilters() {
+    context.read<CarServicesOffersProvider>().applyFilters(
+      serviceNames: _selectedServiceTypes,
+      districts: _selectedDistricts,
+      priceFromValue: _priceFrom,
+      priceToValue: _priceTo,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final locale = Localizations.localeOf(context).languageCode;
@@ -98,24 +146,40 @@ class _CarServiceOfferBoxState extends State<CarServiceOfferBox> {
                             child: Row(
                               children: [
                                 Expanded(
-                                  child: _buildMultiSelectField(
-                                    context, 
-                                    S.of(context).service_type, 
-                                    _selectedServiceTypes, 
-                                    const ["Maintenance", "Electricity", "Bodywork"], 
-                                    (selection) => setState(() => _selectedServiceTypes = selection),
-                                    isFilter: true
+                                  child: Consumer<CarServicesOffersProvider>(
+                                    builder: (context, provider, child) {
+                                      final serviceNames = provider.getUniqueServiceNames();
+                                      return _buildMultiSelectField(
+                                        context, 
+                                        S.of(context).service_type, 
+                                        _selectedServiceTypes, 
+                                        serviceNames, 
+                                        (selection) {
+                                          setState(() => _selectedServiceTypes = selection);
+                                          _applyAndSearchWithDebounce();
+                                        },
+                                        isFilter: true
+                                      );
+                                    },
                                   ),
                                 ),
                                 SizedBox(width: 3.w),
                                 Expanded(
-                                  child: _buildMultiSelectField(
-                                    context, 
-                                    S.of(context).district, 
-                                    _selectedDistricts, 
-                                    const ["Riyadh", "Jeddah", "Dammam"], 
-                                    (selection) => setState(() => _selectedDistricts = selection),
-                                    isFilter: true
+                                  child: Consumer<CarServicesOffersProvider>(
+                                    builder: (context, provider, child) {
+                                      final districts = provider.getUniqueDistricts();
+                                      return _buildMultiSelectField(
+                                        context, 
+                                        S.of(context).district, 
+                                        _selectedDistricts, 
+                                        districts, 
+                                        (selection) {
+                                          setState(() => _selectedDistricts = selection);
+                                          _applyAndSearchWithDebounce();
+                                        },
+                                        isFilter: true
+                                      );
+                                    },
                                   ),
                                 ),
                                 SizedBox(width: 3.w),
@@ -130,7 +194,11 @@ class _CarServiceOfferBoxState extends State<CarServiceOfferBox> {
                                     onTap: () async {
                                       final result = await _showRangePicker(context, title: S.of(context).price, initialFrom: _priceFrom, initialTo: _priceTo, unit: "AED");
                                       if (result != null) {
-                                        setState(() { _priceFrom = result['from']; _priceTo = result['to']; });
+                                        setState(() { 
+                                          _priceFrom = result['from']; 
+                                          _priceTo = result['to']; 
+                                        });
+                                        _applyAndSearchWithDebounce();
                                       }
                                     }
                                   ),
@@ -151,13 +219,17 @@ class _CarServiceOfferBoxState extends State<CarServiceOfferBox> {
                         bool isSmallScreen = MediaQuery.of(context).size.width <= 370;
                         return Row(
                           children: [
-                            Text(
-                              '${S.of(context).ad} 1000',
-                              style: TextStyle(
-                                fontSize: 12.sp,
-                                color: KTextColor,
-                                fontWeight: FontWeight.w400,
-                              ),
+                            Consumer<CarServicesOffersProvider>(
+                              builder: (context, provider, child) {
+                                return Text(
+                                  '${S.of(context).ad} ${provider.offerAds.length}',
+                                  style: TextStyle(
+                                    fontSize: 12.sp,
+                                    color: KTextColor,
+                                    fontWeight: FontWeight.w400,
+                                  ),
+                                );
+                              },
                             ),
                             SizedBox(width: 40.w),
                             Expanded(
@@ -216,47 +288,119 @@ class _CarServiceOfferBoxState extends State<CarServiceOfferBox> {
                   SizedBox(height: 5.h),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 5),
-                    child: GridView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      itemCount: CarServiceDataDummy.length,
-                      gridDelegate:
-                          const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 2,
-                        mainAxisSpacing: 6,
-                        childAspectRatio: .89,
-                      ),
-                      itemBuilder: (context, index) {
-                        final car = CarServiceDataDummy[index];
-
-                        return Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 3),
-                          child: Container(
-                            width: cardSize.width.w,
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(4.r),
-                              border: Border.all(color: Colors.grey.shade300),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.grey.withOpacity(0.15),
-                                  blurRadius: 5.r,
-                                  offset: Offset(0, 2.h),
-                                ),
-                              ],
+                    child: Consumer<CarServicesOffersProvider>(
+                      builder: (context, provider, child) {
+                        if (provider.isLoading) {
+                          return const Center(
+                            child: Padding(
+                              padding: EdgeInsets.all(50.0),
+                              child: CircularProgressIndicator(),
                             ),
-                            child: Column(
+                          );
+                        }
+
+                        if (provider.error != null) {
+                          return Center(
+                            child: Padding(
+                              padding: const EdgeInsets.all(20.0),
+                              child: Column(
+                                children: [
+                                  Icon(Icons.error_outline, size: 48, color: Colors.red),
+                                  SizedBox(height: 16),
+                                  Text(
+                                    'حدث خطأ في تحميل البيانات',
+                                    style: TextStyle(fontSize: 16, color: Colors.red),
+                                  ),
+                                  SizedBox(height: 8),
+                                  ElevatedButton(
+                                    onPressed: () => provider.fetchOfferAds(),
+                                    child: Text('إعادة المحاولة'),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        }
+
+                        if (provider.offerAds.isEmpty) {
+                          return Center(
+                            child: Padding(
+                              padding: const EdgeInsets.all(50.0),
+                              child: Text(
+                                'لا توجد إعلانات متاحة',
+                                style: TextStyle(fontSize: 16, color: KTextColor),
+                              ),
+                            ),
+                          );
+                        }
+
+                        return GridView.builder(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: provider.offerAds.length,
+                          gridDelegate:
+                              const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 2,
+                            mainAxisSpacing: 6,
+                            childAspectRatio: .89,
+                          ),
+                          itemBuilder: (context, index) {
+                            final car = provider.offerAds[index];
+
+                        return GestureDetector(
+                          onTap: () {
+                            context.push('/car-service-details', extra: car);
+                          },
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 3),
+                            child: Container(
+                              width: cardSize.width.w,
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(4.r),
+                                border: Border.all(color: Colors.grey.shade300),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.grey.withOpacity(0.15),
+                                    blurRadius: 5.r,
+                                    offset: Offset(0, 2.h),
+                                  ),
+                                ],
+                              ),
+                              child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               mainAxisAlignment: MainAxisAlignment.start,
                               children: [
                                 Stack(children: [
                                   ClipRRect(
                                     borderRadius: BorderRadius.circular(4.r),
-                                    child: Image.asset(
-                                      car.image,
+                                    child: Image.network(
+                                      ImageUrlHelper.getFullImageUrl(car.mainImage),
                                       height: (cardSize.height * 0.6).h,
                                       width: double.infinity,
                                       fit: BoxFit.cover,
+                                      loadingBuilder: (context, child, loadingProgress) {
+                                        if (loadingProgress == null) return child;
+                                        return Container(
+                                          height: (cardSize.height * 0.6).h,
+                                          width: double.infinity,
+                                          color: Colors.grey[200],
+                                          child: Center(
+                                            child: CircularProgressIndicator(
+                                              value: loadingProgress.expectedTotalBytes != null
+                                                  ? loadingProgress.cumulativeBytesLoaded /
+                                                      loadingProgress.expectedTotalBytes!
+                                                  : null,
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                      errorBuilder: (c, e, s) => Container(
+                                        height: (cardSize.height * 0.6).h,
+                                        width: double.infinity,
+                                        color: Colors.grey[200],
+                                        child: Image.asset('assets/images/car.jpg', fit: BoxFit.cover),
+                                      ),
                                     ),
                                   ),
                                   Positioned(
@@ -277,7 +421,7 @@ class _CarServiceOfferBoxState extends State<CarServiceOfferBox> {
                                           MainAxisAlignment.spaceEvenly,
                                       children: [
                                         Text(
-                                          car.price,
+                                          '${car.price ?? 0} AED',
                                           style: TextStyle(
                                             color: Colors.red,
                                             fontWeight: FontWeight.w600,
@@ -285,7 +429,7 @@ class _CarServiceOfferBoxState extends State<CarServiceOfferBox> {
                                           ),
                                         ),
                                         Text(
-                                          car.title,
+                                          car.serviceName ?? 'خدمة غير محددة',
                                           style: TextStyle(
                                             fontWeight: FontWeight.w600,
                                             fontSize: 12.sp,
@@ -295,12 +439,14 @@ class _CarServiceOfferBoxState extends State<CarServiceOfferBox> {
                                           overflow: TextOverflow.ellipsis,
                                         ),
                                         Text(
-                                          car.contact,
+                                          car.advertiserName ?? '',
                                           style: TextStyle(
                                             fontWeight: FontWeight.w600,
                                             fontSize: 12.sp,
                                             color: KTextColor,
                                           ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
                                         ),
                                         Row(
                                           children: [
@@ -312,7 +458,7 @@ class _CarServiceOfferBoxState extends State<CarServiceOfferBox> {
                                             SizedBox(width: 5),
                                             Expanded(
                                               child: Text(
-                                                car.location,
+                                               "${ car.district ?? 'غير محدد'} ${car.district}",
                                                 style: TextStyle(
                                                   fontSize: 12.sp,
                                                   color: Color.fromRGBO(
@@ -330,12 +476,15 @@ class _CarServiceOfferBoxState extends State<CarServiceOfferBox> {
                                 ),
                               ],
                             ),
+                            ),
                           ),
+                        );
+                          },
                         );
                       },
                     ),
                   ),
-                  SizedBox(height: 20,)
+                  SizedBox(height: 20),
                 ],
               ),
             ),

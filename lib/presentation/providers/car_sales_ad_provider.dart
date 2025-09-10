@@ -81,9 +81,11 @@ class CarAdProvider with ChangeNotifier {
 
     List<BestAdvertiser> _topDealerAds = [];
   bool _isLoadingTopDealers = false;
+  String? _topDealersError;
 
    List<BestAdvertiser> get topDealerAds => _topDealerAds;
   bool get isLoadingTopDealers => _isLoadingTopDealers;
+  String? get topDealersError => _topDealersError;
   
   bool _disposed = false;
   
@@ -419,13 +421,15 @@ class CarAdProvider with ChangeNotifier {
  Future<void> fetchTopDealerAds({bool forceRefresh = false}) async {
         if (!forceRefresh && _topDealerAds.isNotEmpty) return;
         _isLoadingTopDealers = true;
+        _topDealersError = null;
         safeNotifyListeners();
         try {
           final token = await const FlutterSecureStorage().read(key: 'auth_token');
           if (token == null) throw Exception('Token not found');
-          _topDealerAds = await _carAdRepository.getBestAdvertiserAds(token: token);
+          _topDealerAds = await _carAdRepository.getBestAdvertiserAds(token: token, category: 'car_sales');
         } catch (e) {
           if (kDebugMode) print("Error fetching top dealer ads: $e");
+          _topDealersError = e.toString();
         } finally {
           _isLoadingTopDealers = false;
           safeNotifyListeners();

@@ -90,7 +90,7 @@ class _CarServicesAdScreenState extends State<CarServicesAdScreen> {
     const int maxImages = 3;
     final int remainingSlots = maxImages - _thumbnailImages.length;
     if (remainingSlots <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('You have already added the maximum of $maxImages images.')));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('لقد أضفت الحد الأقصى من الصور ($maxImages صور).'), backgroundColor: Colors.orange));
       return;
     }
     final List<XFile> pickedImages = await _picker.pickMultiImage(imageQuality: 85, limit: remainingSlots);
@@ -98,6 +98,7 @@ class _CarServicesAdScreenState extends State<CarServicesAdScreen> {
       setState(() {
         _thumbnailImages.addAll(pickedImages.map((img) => File(img.path)));
       });
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('تم إضافة ${pickedImages.length} صورة بنجاح.'), backgroundColor: Colors.green));
     }
   }
 
@@ -157,11 +158,40 @@ class _CarServicesAdScreenState extends State<CarServicesAdScreen> {
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('الرجاء تعبئة جميع الحقول المطلوبة.'), backgroundColor: Colors.orange));
           return;
       }
+      
+      // التحقق من الحقول المطلوبة
+      if (selectedAdvertiserName == null || selectedAdvertiserName!.isEmpty) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('الرجاء اختيار اسم المعلن.'), backgroundColor: Colors.orange));
+          return;
+      }
+      
+      if (selectedPhoneNumber == null || selectedPhoneNumber!.isEmpty) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('الرجاء إدخال رقم الهاتف.'), backgroundColor: Colors.orange));
+          return;
+      }
+      
+      if (_descriptionController.text.trim().isEmpty) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('الرجاء إدخال الوصف.'), backgroundColor: Colors.orange));
+          return;
+      }
+      
       if (_mainImage == null) {
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('الرجاء إضافة صورة رئيسية.'), backgroundColor: Colors.orange));
           return;
       }
+      
+      if (selectedLocation.isEmpty) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('الرجاء تحديد الموقع.'), backgroundColor: Colors.orange));
+          return;
+      }
+      
       final infoProvider = context.read<CarServicesInfoProvider>();
+      final token = await const FlutterSecureStorage().read(key: 'auth_token');
+      
+      // إضافة الموقع إلى contact info إذا لم يكن موجوداً
+      if (token != null && selectedLocation.isNotEmpty && !infoProvider.locations.contains(selectedLocation)) {
+        await infoProvider.addContactItem('locations', selectedLocation, token: token);
+      }
 
       // تحويل أسماء العرض إلى أسماء الـ API
       final serviceTypeName = infoProvider.getServiceNameFromDisplayName(selectedServiceType);
@@ -191,11 +221,35 @@ class _CarServicesAdScreenState extends State<CarServicesAdScreen> {
           'latitude': selectedLatLng?.latitude,
           'longitude': selectedLatLng?.longitude,
           'mainImage': _mainImage!,
-          'thumbnailImages': _thumbnailImages,
+          'thumbnailImages': _thumbnailImages.isNotEmpty ? _thumbnailImages : null,
+          'plan_type': null,
+          'plan_days': null,
+          'plan_expires_at': null,
       };
 
-     
-
+      // طباعة البيانات المرسلة
+      print('=== Car Services Ad Data ===');
+      print('adType: ${adData['adType']}');
+      print('title: ${adData['title']}');
+      print('description: ${adData['description']}');
+      print('emirate: ${adData['emirate']}');
+      print('district: ${adData['district']}');
+      print('area: ${adData['area']}');
+      print('service_name: ${adData['service_name']}');
+      print('service_type: ${adData['service_type']}');
+      print('price: ${adData['price']}');
+      print('advertiser_name: ${adData['advertiser_name']}');
+      print('phone_number: ${adData['phone_number']}');
+      print('whatsapp: ${adData['whatsapp']}');
+      print('location: ${adData['location']}');
+      print('latitude: ${adData['latitude']}');
+      print('longitude: ${adData['longitude']}');
+      print('mainImage: ${adData['mainImage'] != null ? 'File selected' : 'null'}');
+      print('thumbnailImages: ${adData['thumbnailImages'] != null ? '${(_thumbnailImages.length)} images' : 'null'}');
+      print('plan_type: ${adData['plan_type']}');
+      print('plan_days: ${adData['plan_days']}');
+      print('plan_expires_at: ${adData['plan_expires_at']}');
+      print('========================');
 
       context.push('/placeAnAd', extra: adData);
   }

@@ -11,6 +11,10 @@ class BestAdvertiserAd {
   final String mainImage;
   // This will be populated from the parent object
   final String advertiserName;
+  // Car service specific fields
+  final String? serviceType;
+  final String? serviceName;
+  final String? district;
 
   BestAdvertiserAd({
     required this.id,
@@ -22,6 +26,9 @@ class BestAdvertiserAd {
     required this.price,
     required this.mainImage,
     required this.advertiserName,
+    this.serviceType,
+    this.serviceName,
+    this.district,
   });
 
   // Factory constructor that needs additional data (advertiser ID and name)
@@ -36,6 +43,9 @@ class BestAdvertiserAd {
       price: json['price']?.toString() ?? '0',
       mainImage: json['main_image'] ?? '',
       advertiserName: advertiserName, // Set from the parent
+      serviceType: json['service_type']?.toString(),
+      serviceName: json['service_name']?.toString(),
+      district: json['district']?.toString(),
     );
   }
 }
@@ -51,17 +61,33 @@ class BestAdvertiser {
     required this.ads,
   });
 
-  factory BestAdvertiser.fromJson(Map<String, dynamic> json) {
+  factory BestAdvertiser.fromJson(Map<String, dynamic> json, {String? filterByCategory}) {
     String advertiserName = json['advertiser_name']?.toString() ?? 'Top Dealer'; // Use a default name if null
     int advertiserId = json['id'] ?? 0;
     List<BestAdvertiserAd> parsedAds = [];
 
     if (json['featured_in'] is List && (json['featured_in'] as List).isNotEmpty) {
-      final featuredData = (json['featured_in'] as List).first;
-      if (featuredData['latest_ads'] is List) {
-        parsedAds = (featuredData['latest_ads'] as List)
-          .map((adJson) => BestAdvertiserAd.fromJson(adJson, advertiserId: advertiserId, advertiserName: advertiserName))
-          .toList();
+      // إذا تم تحديد category للفلترة، نبحث عن الـ category المطلوب
+      if (filterByCategory != null) {
+        final featuredList = json['featured_in'] as List;
+        final matchingCategory = featuredList.firstWhere(
+          (item) => item['category'] == filterByCategory,
+          orElse: () => null,
+        );
+        
+        if (matchingCategory != null && matchingCategory['latest_ads'] is List) {
+          parsedAds = (matchingCategory['latest_ads'] as List)
+            .map((adJson) => BestAdvertiserAd.fromJson(adJson, advertiserId: advertiserId, advertiserName: advertiserName))
+            .toList();
+        }
+      } else {
+        // إذا لم يتم تحديد category، نأخذ أول عنصر كما كان من قبل
+        final featuredData = (json['featured_in'] as List).first;
+        if (featuredData['latest_ads'] is List) {
+          parsedAds = (featuredData['latest_ads'] as List)
+            .map((adJson) => BestAdvertiserAd.fromJson(adJson, advertiserId: advertiserId, advertiserName: advertiserName))
+            .toList();
+        }
       }
     }
 

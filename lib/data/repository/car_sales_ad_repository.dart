@@ -237,12 +237,26 @@ class CarAdRepository {
   }
 
 
-  Future<List<BestAdvertiser>> getBestAdvertiserAds({required String token}) async {
-    final response = await _apiService.get('/api/best-advertisers', token: token);
+  Future<List<BestAdvertiser>> getBestAdvertiserAds({required String token, String? category}) async {
+    String endpoint = '/api/best-advertisers';
+    Map<String, dynamic>? query;
+    if (category != null) {
+      query = {'category': category};
+    }
+    
+    final response = await _apiService.get(endpoint, token: token, query: query);
     
     // الرد هو قائمة مباشرة
     if (response is List) {
-      return response.map((advertiserJson) => BestAdvertiser.fromJson(advertiserJson)).toList();
+      return response
+          .map((advertiserJson) => BestAdvertiser.fromJson(advertiserJson, filterByCategory: category))
+          .where((advertiser) => advertiser.ads.isNotEmpty) // فقط الـ advertisers الذين لديهم إعلانات
+          .toList();
+    } else if (response is Map<String, dynamic> && response['data'] is List) {
+      return (response['data'] as List)
+          .map((advertiserJson) => BestAdvertiser.fromJson(advertiserJson, filterByCategory: category))
+          .where((advertiser) => advertiser.ads.isNotEmpty) // فقط الـ advertisers الذين لديهم إعلانات
+          .toList();
     }
     
     throw Exception('Failed to parse Best Advertiser Ads: Expected a List.');

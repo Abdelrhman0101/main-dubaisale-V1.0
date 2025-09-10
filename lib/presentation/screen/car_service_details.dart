@@ -1,7 +1,8 @@
 import 'package:advertising_app/generated/l10n.dart';
-import 'package:advertising_app/data/model/car_service_model.dart';
+import 'package:advertising_app/data/model/car_service_ad_model.dart';
 import 'package:flutter/material.dart';
 import 'package:advertising_app/constant/string.dart';
+import 'package:advertising_app/constant/image_url_helper.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -60,17 +61,74 @@ class _CarServiceDetailsState extends State<CarServiceDetails> {
                     SizedBox(
                       height: 238.h,
                       width: double.infinity,
-                      child: PageView.builder(
-                        controller: _pageController,
-                        itemCount: car_service.images.length,
-                        onPageChanged: (index) =>
-                            setState(() => _currentPage = index),
-                        itemBuilder: (context, index) => Image.asset(
-                          car_service.images[index],
-                          fit: BoxFit.cover,
-                          width: double.infinity,
-                        ),
-                      ),
+                      child: car_service.thumbnailImages.isNotEmpty
+                          ? PageView.builder(
+                              controller: _pageController,
+                              itemCount: car_service.thumbnailImages.length,
+                              onPageChanged: (index) =>
+                                  setState(() => _currentPage = index),
+                              itemBuilder: (context, index) => Image.network(
+                                ImageUrlHelper.getFullImageUrl(car_service.thumbnailImages[index]),
+                                fit: BoxFit.cover,
+                                width: double.infinity,
+                                errorBuilder: (context, error, stackTrace) {
+                                  return Container(
+                                    color: Colors.grey[300],
+                                    child: const Icon(
+                                      Icons.image_not_supported,
+                                      size: 50,
+                                      color: Colors.grey,
+                                    ),
+                                  );
+                                },
+                                loadingBuilder: (context, child, loadingProgress) {
+                                  if (loadingProgress == null) return child;
+                                  return Center(
+                                    child: CircularProgressIndicator(
+                                      value: loadingProgress.expectedTotalBytes != null
+                                          ? loadingProgress.cumulativeBytesLoaded /
+                                              loadingProgress.expectedTotalBytes!
+                                          : null,
+                                    ),
+                                  );
+                                },
+                              )
+                            )
+                          : car_service.mainImage != null
+                              ? Image.network(
+                                  ImageUrlHelper.getFullImageUrl(car_service.mainImage!),
+                                  fit: BoxFit.cover,
+                                  width: double.infinity,
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return Container(
+                                      color: Colors.grey[300],
+                                      child: const Icon(
+                                        Icons.image_not_supported,
+                                        size: 50,
+                                        color: Colors.grey,
+                                      ),
+                                    );
+                                  },
+                                  loadingBuilder: (context, child, loadingProgress) {
+                                    if (loadingProgress == null) return child;
+                                    return Center(
+                                      child: CircularProgressIndicator(
+                                        value: loadingProgress.expectedTotalBytes != null
+                                            ? loadingProgress.cumulativeBytesLoaded /
+                                                loadingProgress.expectedTotalBytes!
+                                            : null,
+                                      ),
+                                    );
+                                  },
+                                )
+                              : Container(
+                                  color: Colors.grey[300],
+                                  child: const Icon(
+                                    Icons.image_not_supported,
+                                    size: 50,
+                                    color: Colors.grey,
+                                  ),
+                                ),
                     ),
                     // Back button
                     Positioned(
@@ -127,46 +185,48 @@ class _CarServiceDetailsState extends State<CarServiceDetails> {
                         size: 30.sp,
                       ),
                     ),
-                    // Page indicator dots
-                    Positioned(
-                      bottom: 12.h,
-                      left: MediaQuery.of(context).size.width / 2 -
-                          (car_service.images.length * 10.w / 2),
-                      child: Row(
-                        children: List.generate(car_service.images.length, (index) {
-                          return Container(
-                            margin: EdgeInsets.symmetric(horizontal: 2.w),
-                            width: 7.w,
-                            height: 7.h,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: _currentPage == index
-                                  ? Colors.white
-                                  : Colors.white54,
-                            ),
-                          );
-                        }),
-                      ),
-                    ),
-                    // Image counter
-                    Positioned(
-                      bottom: 12.h,
-                      right: isArabic ? 16.w : null,
-                      left: isArabic ? null : 16.w,
-                      child: Container(
-                        padding: EdgeInsets.symmetric(
-                            horizontal: 8.w, vertical: 4.h),
-                        decoration: BoxDecoration(
-                          color: Colors.black54,
-                          borderRadius: BorderRadius.circular(8.r),
-                        ),
-                        child: Text(
-                          '${_currentPage + 1}/${car_service.images.length}',
-                          style:
-                              TextStyle(color: Colors.white, fontSize: 12.sp),
+                    // Page indicator dots - only show if there are multiple thumbnail images
+                    if (car_service.thumbnailImages.length > 1)
+                      Positioned(
+                        bottom: 12.h,
+                        left: MediaQuery.of(context).size.width / 2 -
+                            (car_service.thumbnailImages.length * 10.w / 2),
+                        child: Row(
+                          children: List.generate(car_service.thumbnailImages.length, (index) {
+                            return Container(
+                              margin: EdgeInsets.symmetric(horizontal: 2.w),
+                              width: 7.w,
+                              height: 7.h,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: _currentPage == index
+                                    ? Colors.white
+                                    : Colors.white54,
+                              ),
+                            );
+                          }),
                         ),
                       ),
-                    ),
+                    // Image counter - only show if there are multiple thumbnail images
+                    if (car_service.thumbnailImages.length > 1)
+                      Positioned(
+                        bottom: 12.h,
+                        right: isArabic ? 16.w : null,
+                        left: isArabic ? null : 16.w,
+                        child: Container(
+                          padding: EdgeInsets.symmetric(
+                              horizontal: 8.w, vertical: 4.h),
+                          decoration: BoxDecoration(
+                            color: Colors.black54,
+                            borderRadius: BorderRadius.circular(8.r),
+                          ),
+                          child: Text(
+                            '${_currentPage + 1}/${car_service.thumbnailImages.length}',
+                            style:
+                                TextStyle(color: Colors.white, fontSize: 12.sp),
+                          ),
+                        ),
+                      ),
                   ],
                 ),
                 SizedBox(height: 10.h),
@@ -198,7 +258,7 @@ class _CarServiceDetailsState extends State<CarServiceDetails> {
                                 ),
                                 Spacer(),
                                 Text(
-                                  widget.car_service.date,
+                                  widget.car_service.createdAt ?? 'N/A',
                                   style: TextStyle(
                                       color: Colors.grey, fontSize: 10.sp),
                                 ),
@@ -251,7 +311,7 @@ class _CarServiceDetailsState extends State<CarServiceDetails> {
                             // ),
                             SizedBox(height: 6.h),
                             Text(
-                              widget.car_service.line1,
+                              widget.car_service.serviceName,
                               style: TextStyle(
                                 fontSize: 14.sp,
                                 color: KTextColor,
@@ -260,7 +320,7 @@ class _CarServiceDetailsState extends State<CarServiceDetails> {
                             ),
                             SizedBox(height: 6.h),
                             Text(
-                              widget.car_service.details,
+                              widget.car_service.description,
                               style: TextStyle(
                                 fontSize: 14.sp,
                                 color: KTextColor,
@@ -278,7 +338,7 @@ class _CarServiceDetailsState extends State<CarServiceDetails> {
                                 SizedBox(width: 6.w),
                                 Expanded(
                                   child: Text(
-                                    widget.car_service.location,
+                                    widget.car_service.location ?? '',
                                     style: TextStyle(
                                       fontSize: 14.sp,
                                       color: KTextColor,
@@ -416,7 +476,7 @@ class _CarServiceDetailsState extends State<CarServiceDetails> {
                             SizedBox(width: 8.w),
                             Expanded(
                               child: Text(
-                                widget.car_service.location,
+                                widget.car_service.location ?? '',
                                 style: TextStyle(
                                   fontSize: 14.sp,
                                   color: KTextColor,
@@ -483,7 +543,7 @@ class _CarServiceDetailsState extends State<CarServiceDetails> {
                                 ),
                                 SizedBox(height: 2.h),
                                 Text(
-                                  car_service.contact,
+                                  car_service.phoneNumber,
                                   style: TextStyle(
                                     fontSize: 14.sp,
                                     color: KTextColor,

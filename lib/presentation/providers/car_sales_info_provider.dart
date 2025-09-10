@@ -362,7 +362,7 @@ class CarSalesInfoProvider extends ChangeNotifier {
     
     // Parse each field from API response
     for (final field in fields) {
-      _fieldLabels[field.fieldName] = field.displayName;
+      _fieldLabels[field.fieldName] = field.fieldName;
       
       switch (field.fieldName) {
         case 'make':

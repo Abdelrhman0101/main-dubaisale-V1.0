@@ -52,7 +52,7 @@ class CarServicesAdRepository {
     String? whatsapp,
     String? location, // يمكن أن يكون اختياري
     required File mainImage,
-    required List<File> thumbnailImages,
+    List<File>? thumbnailImages, // جعلها اختيارية
     // بيانات خطة الإعلان التي ستأتي من الصفحة التالية
     required String planType, 
     required int planDays, 
@@ -79,13 +79,27 @@ class CarServicesAdRepository {
     // ملاحظة مهمة: في وصف الـ API الذي أرسلته، كان اسم حقل الصور المصغرة هو
     // 'thumbnail_images_urls[]'. ولكن بما أننا نرفع ملفات، يجب أن يكون
     // 'thumbnail_images[]' كما في قسم السيارات. سأعتمد هذه الصيغة.
-    await _apiService.postFormData(
-      '/api/car-services-ads',
-      data: textData,
-      mainImage: mainImage,
-      thumbnailImages: thumbnailImages,
-      token: token,
-    );
+    try {
+      await _apiService.postFormData(
+        '/api/car-services-ads',
+        data: textData,
+        mainImage: mainImage,
+        thumbnailImages: thumbnailImages,
+        token: token,
+      );
+    } catch (e) {
+      print('Error creating car service ad: $e');
+      // إعادة رمي الخطأ مع رسالة أوضح
+      if (e.toString().contains('500')) {
+        throw Exception('حدث خطأ في الخادم، يرجى المحاولة مرة أخرى لاحقاً');
+      } else if (e.toString().contains('401') || e.toString().contains('403')) {
+        throw Exception('انتهت صلاحية جلسة الدخول، يرجى تسجيل الدخول مرة أخرى');
+      } else if (e.toString().contains('400')) {
+        throw Exception('بيانات الإعلان غير صحيحة، يرجى التحقق من جميع الحقول');
+      } else {
+        throw Exception('فشل في إنشاء الإعلان: ${e.toString()}');
+      }
+    }
   }
 
  Future<CarServiceAdResponse> getCarServiceAds({
@@ -107,18 +121,58 @@ class CarServicesAdRepository {
   }
 
 
-Future<List<BestAdvertiser>> getTopGarages({required String token}) async {
-  // نفترض أن الـ Endpoint مشابه لقسم السيارات
-  final response = await _apiService.get('/api/best-advertisers/car_services', token: token);
+Future<List<BestAdvertiser>> getTopGarages({required String token, String? category}) async {
+  // استخدام الـ category كـ query parameter بدلاً من جزء من الـ endpoint
+  String endpoint = '/api/best-advertisers';
+  Map<String, dynamic>? query;
+  if (category != null) {
+    query = {'category': category};
+  }
+  
+  final response = await _apiService.get(endpoint, token: token, query: query);
   
   if (response is List) {
-    return response.map((json) => BestAdvertiser.fromJson(json)).toList();
+    // استخدام الـ filterByCategory في الـ fromJson مباشرة
+    List<BestAdvertiser> advertisers = response
+        .map((json) => BestAdvertiser.fromJson(json, filterByCategory: category))
+        .where((advertiser) => advertiser.ads.isNotEmpty) // فقط الـ advertisers الذين لديهم إعلانات
+        .toList();
+    return advertisers;
   } 
   else if (response is Map<String, dynamic> && response['data'] is List) {
-    return (response['data'] as List).map((json) => BestAdvertiser.fromJson(json)).toList();
+    List<BestAdvertiser> advertisers = (response['data'] as List)
+        .map((json) => BestAdvertiser.fromJson(json, filterByCategory: category))
+        .where((advertiser) => advertiser.ads.isNotEmpty) // فقط الـ advertisers الذين لديهم إعلانات
+        .toList();
+    return advertisers;
   }
   
   throw Exception('Failed to parse Top Garages list from API response.');
+}
+
+// جلب إعلانات صندوق العروض مع فلاتر اختيارية
+Future<List<CarServiceModel>> getOfferAds({required String token, Map<String, String>? filters}) async {
+  try {
+    String endpoint = '/api/car-services/offers-box/ads';
+    
+    // إضافة الفلاتر كـ query parameters
+    Map<String, dynamic>? queryParams;
+    if (filters != null && filters.isNotEmpty) {
+      queryParams = Map<String, dynamic>.from(filters);
+    }
+    
+    final response = await _apiService.get(endpoint, token: token, query: queryParams);
+    
+    if (response is List) {
+      return response.map((json) => CarServiceModel.fromJson(json)).toList();
+    } else if (response is Map<String, dynamic> && response['data'] is List) {
+      return (response['data'] as List).map((json) => CarServiceModel.fromJson(json)).toList();
+    } else {
+      throw Exception('Unexpected response format for offer ads');
+    }
+  } catch (e) {
+    throw Exception('Failed to fetch offer ads: $e');
+  }
 }
 
 
