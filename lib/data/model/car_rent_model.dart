@@ -3,6 +3,7 @@ import 'ad_priority.dart';
 import 'favorite_item_interface_model.dart';
 
 class CarRentModel implements FavoriteItemInterface {
+ 
   late final String title;
   late final String price;
   final String day_rent;
@@ -25,6 +26,7 @@ class CarRentModel implements FavoriteItemInterface {
   final String seats;
 
   CarRentModel({
+
     required this.day_rent,
     required this.month_rent,
     required this.year,
@@ -52,4 +54,8 @@ class CarRentModel implements FavoriteItemInterface {
 
   @override
   List<String> get images => _images;
+  
+  @override
+  // TODO: implement id
+  get id => throw UnimplementedError();
 }

@@ -266,7 +266,7 @@ class _CarServiceDetailsState extends State<CarServiceDetails> {
                             ),
                             SizedBox(height: 6.h),
                             Text(
-                              widget.car_service.title,
+                              widget.car_service.serviceName,
                               style: TextStyle(
                                 fontSize: 16.sp,
                                 fontWeight: FontWeight.w600,
@@ -320,7 +320,7 @@ class _CarServiceDetailsState extends State<CarServiceDetails> {
                             ),
                             SizedBox(height: 6.h),
                             Text(
-                              widget.car_service.description,
+                              widget.car_service.title,
                               style: TextStyle(
                                 fontSize: 14.sp,
                                 color: KTextColor,
@@ -338,7 +338,7 @@ class _CarServiceDetailsState extends State<CarServiceDetails> {
                                 SizedBox(width: 6.w),
                                 Expanded(
                                   child: Text(
-                                    widget.car_service.location ?? '',
+                                    "${widget.car_service.emirate} ${widget.car_service.district}  ${widget.car_service.area} ",
                                     style: TextStyle(
                                       fontSize: 14.sp,
                                       color: KTextColor,
@@ -416,7 +416,7 @@ class _CarServiceDetailsState extends State<CarServiceDetails> {
                           children: [
                             Expanded(
                               child: ReadMoreText(
-                                "Very specifically garage with smart engineering equipment",
+                               widget.car_service.description,
                                 trimLines: 2,
                                 colorClickableText:
                                     Color.fromARGB(255, 9, 37, 108),
@@ -543,7 +543,7 @@ class _CarServiceDetailsState extends State<CarServiceDetails> {
                                 ),
                                 SizedBox(height: 2.h),
                                 Text(
-                                  car_service.phoneNumber,
+                                  car_service.advertiserName,
                                   style: TextStyle(
                                     fontSize: 14.sp,
                                     color: KTextColor,

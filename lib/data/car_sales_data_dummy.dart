@@ -36,6 +36,7 @@ CarSalesModel(
 ),
 
 CarSalesModel(
+  
   image: 'assets/images/car.jpg',
   title: 'Toyota Camry',
   price: 'AED 120,000',

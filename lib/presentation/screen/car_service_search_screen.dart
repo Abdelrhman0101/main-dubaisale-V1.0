@@ -15,6 +15,9 @@ import 'package:advertising_app/presentation/providers/car_services_provider.dar
 import 'package:advertising_app/presentation/providers/car_services_info_provider.dart';
 import 'package:advertising_app/utils/number_formatter.dart';
 import 'package:advertising_app/constant/image_url_helper.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:advertising_app/utils/phone_number_formatter.dart';
 
 // تعريف الثوابت المستخدمة في الألوان
 const Color KTextColor = Color.fromRGBO(0, 30, 91, 1);
@@ -23,13 +26,31 @@ final Color borderColor = Color.fromRGBO(8, 194, 201, 1);
 
 // Adapter لتحويل بيانات الموديل الحقيقي إلى الصيغة التي تفهمها SearchCard
 class CarServiceAdCardAdapter implements FavoriteItemInterface {
+
+  @override
+  String get id => (_ad.id ?? '').toString();
   final CarServiceModel _ad;
   CarServiceAdCardAdapter(this._ad);
 
   @override String get contact => _ad.advertiserName;
   @override String get details => _ad.serviceType;
   @override String get imageUrl => ImageUrlHelper.getMainImageUrl(_ad.mainImage ?? '');
-  @override List<String> get images => [ ImageUrlHelper.getMainImageUrl(_ad.mainImage ?? ''), ...ImageUrlHelper.getThumbnailImageUrls(_ad.thumbnailImages) ].where((img) => img.isNotEmpty).toList();
+  @override List<String> get images {
+    List<String> allImages = [];
+    
+    // إضافة الصورة الرئيسية إذا كانت متوفرة
+    if (_ad.mainImage != null && _ad.mainImage!.isNotEmpty) {
+      allImages.add(ImageUrlHelper.getMainImageUrl(_ad.mainImage!));
+    }
+    
+    // إضافة الصور المصغرة إذا كانت متوفرة
+    if (_ad.thumbnailImages != null && _ad.thumbnailImages!.isNotEmpty) {
+      allImages.addAll(ImageUrlHelper.getThumbnailImageUrls(_ad.thumbnailImages!));
+    }
+    
+    // إزالة الصور الفارغة وإرجاع القائمة
+    return allImages.where((img) => img.isNotEmpty).toList();
+  }
   @override String get line1 => _ad.title;
   @override String get line2 => _ad.title;
   @override String get price => "${NumberFormatter.formatPrice(_ad.price)} AED";
@@ -144,6 +165,17 @@ class _CarServiceSearchScreenState extends State<CarServiceSearchScreen> with Au
     print('============================');
     
     context.read<CarServicesProvider>().applyAndFetchAds(initialFilters: filters);
+  }
+
+  Future<void> _launchUrl(String urlString) async {
+    final Uri url = Uri.parse(urlString);
+    if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Could not launch $urlString')),
+        );
+      }
+    }
   }
 
   void _handleScroll() {
@@ -345,17 +377,27 @@ class _CarServiceSearchScreenState extends State<CarServiceSearchScreen> with Au
           // تمرير الأزرار المخصصة مع الوظائف
           customActionButtons: [
             _buildActionIcon(Icons.phone, onTap: () {
-              // يمكن إضافة وظيفة الاتصال هنا
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('سيتم إضافة وظيفة الاتصال قريباً')),
-              );
+              final phoneNumber = item.phoneNumber;
+              if (phoneNumber != null && phoneNumber.isNotEmpty) {
+                final telUrl = PhoneNumberFormatter.getTelUrl(phoneNumber);
+                _launchUrl(telUrl);
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('رقم الهاتف غير متوفر')),
+                );
+              }
             }),
             const SizedBox(width: 5),
-            _buildActionIcon(Icons.message, onTap: () {
-              // يمكن إضافة وظيفة الرسائل هنا
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('سيتم إضافة وظيفة الرسائل قريباً')),
-              );
+            _buildActionIcon(FontAwesomeIcons.whatsapp, onTap: () {
+              final phoneNumber = item.phoneNumber;
+              if (phoneNumber != null && phoneNumber.isNotEmpty) {
+                final whatsappUrl = PhoneNumberFormatter.getWhatsAppUrl(phoneNumber);
+                _launchUrl(whatsappUrl);
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('رقم الهاتف غير متوفر')),
+                );
+              }
             }),
           ],
         ),

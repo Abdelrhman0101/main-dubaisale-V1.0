@@ -5,11 +5,14 @@ import 'package:advertising_app/generated/l10n.dart';
 import 'package:advertising_app/data/model/ad_priority.dart';
 import 'package:advertising_app/data/model/favorite_item_interface_model.dart';
 import 'package:advertising_app/presentation/widget/custom_search_card.dart';
+import 'package:advertising_app/presentation/providers/restaurant_ad_provider.dart';
+import 'package:advertising_app/presentation/providers/restaurants_info_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 
 
 // تعريف الثوابت المستخدمة في الألوان
@@ -19,7 +22,8 @@ final Color borderColor = Color.fromRGBO(8, 194, 201, 1);
 
 
 class RestaurantSearchScreen extends StatefulWidget {
-  const RestaurantSearchScreen({super.key});
+  final Map<String, dynamic>? filters;
+  const RestaurantSearchScreen({super.key, this.filters});
 
   @override
   State<RestaurantSearchScreen> createState() => _RestaurantSearchScreenState();
@@ -43,6 +47,43 @@ class _RestaurantSearchScreenState extends State<RestaurantSearchScreen>
   void initState() {
     super.initState();
     _scrollController.addListener(_handleScroll);
+    
+    // Initialize filters from widget parameters
+    if (widget.filters != null) {
+      // Handle single values from restaurants_screen
+      final district = widget.filters!['district'] as String?;
+      final category = widget.filters!['category'] as String?;
+      
+      if (district != null && district != 'All') {
+        _selectedDistricts = [district];
+      }
+      if (category != null && category != 'All') {
+        _selectedCategories = [category];
+      }
+      
+      // Also handle arrays if they exist
+      _selectedDistricts.addAll(List<String>.from(widget.filters!['districts'] ?? []));
+      _selectedCategories.addAll(List<String>.from(widget.filters!['categories'] ?? []));
+    }
+    
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final provider = Provider.of<RestaurantAdProvider>(context, listen: false);
+      
+      // تطبيق الفلاتر إذا تم تمريرها
+      if (widget.filters != null) {
+        final emirate = widget.filters!['emirate'] as String?;
+        final district = widget.filters!['district'] as String?;
+        final category = widget.filters!['category'] as String?;
+        
+         provider.applyFilters(
+          emirate: emirate != 'All' ? emirate : null,
+          district: district != 'All' ? district : null,
+          category: category != 'All' ? category : null,
+        );
+      } else {
+        provider.applyAndFetchAds();
+      }
+    });
   }
 
     @override
@@ -89,33 +130,77 @@ class _RestaurantSearchScreenState extends State<RestaurantSearchScreen>
             child: Row(
               children: [
                 Flexible(
-                  flex: 3, 
-                  child: _buildMultiSelectField(
-                    context, S.of(context).district, _selectedDistricts,
-                    const ["Riyadh", "Jeddah", "Al-Khobar"],
-                    (selection) => setState(() => _selectedDistricts = selection), isFilter: true
+                  flex: 3,
+                  child: Consumer<RestaurantsInfoProvider>(
+                    builder: (context, infoProvider, child) {
+                      List<String> districts = ['All'];
+                       if (infoProvider.emirateDisplayNames.isNotEmpty) {
+                         // Get districts for the first emirate as default
+                         final firstEmirate = infoProvider.emirateDisplayNames.first;
+                         districts.addAll(infoProvider.getDistrictsForEmirate(firstEmirate));
+                       }
+                      
+                      return _buildGenericMultiSelectField<String>(
+                         context,
+                         S.of(context).district,
+                         _selectedDistricts,
+                         districts,
+                         (selection) {
+                           setState(() => _selectedDistricts = selection);
+                           // Apply filters when district changes
+                           final provider = Provider.of<RestaurantAdProvider>(context, listen: false);
+                           provider.updateSelectedDistricts(selection);
+                         },
+                         displayNamer: (district) => district,
+                         isFilter: true,
+                         isLoading: infoProvider.isLoading,
+                       );
+                    },
                   ),
                 ),
                 SizedBox(width: 3.w),
                 Flexible(
                   flex: 3, 
-                   child: _buildRangePickerField(
-                    context, title: S.of(context).price, fromValue: _priceFrom, toValue: _priceTo, unit: "AED", isFilter: true,
-                    onTap: () async {
-                       final result = await _showRangePicker(context, title: S.of(context).price, initialFrom: _priceFrom, initialTo: _priceTo, unit: "AED");
-                        if (result != null) {
-                          setState(() { _priceFrom = result['from']; _priceTo = result['to']; });
+                   child: Consumer<RestaurantAdProvider>(
+                    builder: (context, provider, child) {
+                      return _buildRangePickerField(
+                        context, title: S.of(context).price, fromValue: provider.priceFrom, toValue: provider.priceTo, unit: "AED", isFilter: true,
+                        onTap: () async {
+                           final result = await _showRangePicker(context, title: S.of(context).price, initialFrom: provider.priceFrom, initialTo: provider.priceTo, unit: "AED");
+                            if (result != null) {
+                              provider.updatePriceRange(result['from'], result['to']);
+                            }
                         }
-                    }
+                      );
+                    },
                   ),
                 ),
                 SizedBox(width: 3.w),
                 Flexible(
                   flex: 3,
-                  child: _buildMultiSelectField(
-                    context, S.of(context).category, _selectedCategories,
-                    const ["Saudi", "Italian", "Asian"],
-                    (selection) => setState(() => _selectedCategories = selection), isFilter: true
+                  child: Consumer<RestaurantsInfoProvider>(
+                    builder: (context, infoProvider, child) {
+                      List<String> categories = ['All'];
+                       if (infoProvider.categoryDisplayNames.isNotEmpty) {
+                         categories.addAll(infoProvider.categoryDisplayNames);
+                       }
+                      
+                      return _buildGenericMultiSelectField<String>(
+                         context,
+                         S.of(context).category,
+                         _selectedCategories,
+                         categories,
+                         (selection) {
+                           setState(() => _selectedCategories = selection);
+                           // Apply filters when category changes
+                           final provider = Provider.of<RestaurantAdProvider>(context, listen: false);
+                           provider.updateSelectedCategories(selection);
+                         },
+                         displayNamer: (category) => category,
+                         isFilter: true,
+                         isLoading: infoProvider.isLoading,
+                       );
+                    },
                   ),
                 ),
               ],
@@ -137,200 +222,244 @@ class _RestaurantSearchScreenState extends State<RestaurantSearchScreen>
     ));
 
     final locale = Localizations.localeOf(context).languageCode;
-    final premiumStarAds = RestaurantDataDammy.where((j) => j.priority == AdPriority.PremiumStar).toList();
-    final premiumAds = RestaurantDataDammy.where((j) => j.priority == AdPriority.premium).toList();
-    final featuredAds = RestaurantDataDammy.where((j) => j.priority == AdPriority.featured).toList();
-    final freeAds = RestaurantDataDammy.where((j) => j.priority == AdPriority.free).toList();
+    
+    return Consumer<RestaurantAdProvider>(
+      builder: (context, provider, child) {
+        final premiumStarAds = provider.restaurantAds.where((j) => j.priority == AdPriority.PremiumStar).toList();
+        final premiumAds = provider.restaurantAds.where((j) => j.priority == AdPriority.premium).toList();
+        final featuredAds = provider.restaurantAds.where((j) => j.priority == AdPriority.featured).toList();
+        final freeAds = provider.restaurantAds.where((j) => j.priority == AdPriority.free).toList();
+        final totalAds = provider.restaurantAds.length;
 
-    return Directionality(
-      textDirection: locale == 'ar' ? TextDirection.rtl : TextDirection.ltr,
-      child: Scaffold(
-        backgroundColor: Colors.white,
-        body: SafeArea(
-          child: Stack(
-            children: [
-              SingleChildScrollView(
-                key: const PageStorageKey('restaurant_scroll'),
-                controller: _scrollController,
-                padding: const EdgeInsets.all(4),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    SizedBox(height: 10.h),
-                    Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 18.w),
+        return Directionality(
+          textDirection: locale == 'ar' ? TextDirection.rtl : TextDirection.ltr,
+          child: Scaffold(
+            backgroundColor: Colors.white,
+            body: SafeArea(
+              child: Stack(
+                children: [
+                  if (provider.isLoadingAds)
+                    const Center(child: CircularProgressIndicator())
+                  else if (provider.loadAdsError != null)
+                    Center(
                       child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          GestureDetector(
-                            onTap: () => context.pop(),
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 5),
-                              child: Row(
-                                children: [
-                                  Icon(Icons.arrow_back_ios, color: KTextColor, size: 17.sp),
-                                  Transform.translate(
-                                    offset: Offset(-3.w, 0),
-                                    child: Text( S.of(context).back,
-                                      style: TextStyle( fontSize: 14.sp, fontWeight: FontWeight.w500, color: KTextColor),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                          SizedBox(height: 3.h),
-                          Center(
-                            child: Text( S.of(context).restaurants,
-                              style: TextStyle( fontWeight: FontWeight.w600, fontSize: 24.sp, color: KTextColor),
-                            ),
+                          Text('خطأ في تحميل البيانات: ${provider.loadAdsError}'),
+                          ElevatedButton(
+                            onPressed: () => provider.applyAndFetchAds(),
+                            child: Text('إعادة المحاولة'),
                           ),
                         ],
                       ),
-                    ),
-                    SizedBox(height: 8.h),
-                    Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 18.w),
-                      child: _buildFiltersRow(),
-                    ),
-                    SizedBox(height:4.h),
-                    Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 18.w),
-                      child: LayoutBuilder(
-                        builder: (context, constraints) {
-                          bool isSmallScreen = MediaQuery.of(context).size.width <= 370;
-                          return Row(
-                            children: [
-                              Text(
-                                '${S.of(context).ad} 1000',
-                                style: TextStyle(
-                                  fontSize: 12.sp,
-                                  color: KTextColor,
-                                  fontWeight: FontWeight.w400,
-                                ),
-                              ),
-                              SizedBox(width: isSmallScreen ? 35.w : 30.w),
-                              Expanded(
-                                child: Container(
-                                  height: 37.h,
-                                  padding: EdgeInsetsDirectional.symmetric( horizontal: isSmallScreen ? 8.w : 12.w),
-                                  decoration: BoxDecoration(
-                                    border: Border.all(color: const Color(0xFF08C2C9)),
-                                    borderRadius: BorderRadius.circular(8.r),
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      SvgPicture.asset( 'assets/icons/locationicon.svg', width: 18.w, height: 18.h),
-                                      SizedBox(width: isSmallScreen ? 8.w : 15.w),
-                                      Expanded(
-                                        child: Text( S.of(context).sort, overflow: TextOverflow.ellipsis,
-                                          style: TextStyle(fontWeight: FontWeight.w600, color: KTextColor, fontSize: 12.sp),
-                                        ),
-                                      ),
-                                      SizedBox(
-                                        width: isSmallScreen ? 35.w : 32.w,
-                                        child: Transform.scale(
-                                          scale: isSmallScreen ? 0.8 : .9,
-                                          child: Switch(
-                                            value: true, onChanged: (val) {}, activeColor: Colors.white, activeTrackColor: const Color(0xFF08C2C9),
-                                            inactiveThumbColor: isSmallScreen ? Colors.white : Colors.grey,
-                                            inactiveTrackColor: Colors.grey[300],
+                    )
+                  else if (provider.restaurantAds.isEmpty)
+                    const Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.search_off,
+                            size: 64,
+                            color: Colors.grey,
+                          ),
+                          SizedBox(height: 16),
+                          Text(
+                            "No results found, try different selections",
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: Colors.grey,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
+                      ),
+                    )
+                  else
+                    SingleChildScrollView(
+                      key: const PageStorageKey('restaurant_scroll'),
+                      controller: _scrollController,
+                      padding: const EdgeInsets.all(4),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          SizedBox(height: 10.h),
+                          Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 18.w),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                GestureDetector(
+                                  onTap: () => context.pop(),
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(horizontal: 5),
+                                    child: Row(
+                                      children: [
+                                        Icon(Icons.arrow_back_ios, color: KTextColor, size: 17.sp),
+                                        Transform.translate(
+                                          offset: Offset(-3.w, 0),
+                                          child: Text( S.of(context).back,
+                                            style: TextStyle( fontSize: 14.sp, fontWeight: FontWeight.w500, color: KTextColor),
                                           ),
                                         ),
-                                      ),
-                                    ],
+                                      ],
+                                    ),
                                   ),
                                 ),
-                              ),
-                            ],
-                          );
-                        },
+                                SizedBox(height: 3.h),
+                                Center(
+                                  child: Text( S.of(context).restaurants,
+                                    style: TextStyle( fontWeight: FontWeight.w600, fontSize: 24.sp, color: KTextColor),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          SizedBox(height: 8.h),
+                          Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 18.w),
+                            child: _buildFiltersRow(),
+                          ),
+                          SizedBox(height:4.h),
+                          Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 18.w),
+                            child: LayoutBuilder(
+                              builder: (context, constraints) {
+                                bool isSmallScreen = MediaQuery.of(context).size.width <= 370;
+                                return Row(
+                                  children: [
+                                    Text(
+                                      '${S.of(context).ad} $totalAds',
+                                      style: TextStyle(
+                                        fontSize: 12.sp,
+                                        color: KTextColor,
+                                        fontWeight: FontWeight.w400,
+                                      ),
+                                    ),
+                                    SizedBox(width: isSmallScreen ? 35.w : 30.w),
+                                    Expanded(
+                                      child: Container(
+                                        height: 37.h,
+                                        padding: EdgeInsetsDirectional.symmetric( horizontal: isSmallScreen ? 8.w : 12.w),
+                                        decoration: BoxDecoration(
+                                          border: Border.all(color: const Color(0xFF08C2C9)),
+                                          borderRadius: BorderRadius.circular(8.r),
+                                        ),
+                                        child: Row(
+                                          children: [
+                                            SvgPicture.asset( 'assets/icons/locationicon.svg', width: 18.w, height: 18.h),
+                                            SizedBox(width: isSmallScreen ? 8.w : 15.w),
+                                            Expanded(
+                                              child: Text( S.of(context).sort, overflow: TextOverflow.ellipsis,
+                                                style: TextStyle(fontWeight: FontWeight.w600, color: KTextColor, fontSize: 12.sp),
+                                              ),
+                                            ),
+                                            SizedBox(
+                                              width: isSmallScreen ? 35.w : 32.w,
+                                              child: Transform.scale(
+                                                scale: isSmallScreen ? 0.8 : .9,
+                                                child: Switch(
+                                                  value: false, onChanged: null, activeColor: Colors.white, activeTrackColor: const Color(0xFF08C2C9),
+                                                  inactiveThumbColor: isSmallScreen ? Colors.white : Colors.grey,
+                                                  inactiveTrackColor: Colors.grey[300],
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                );
+                              },
+                            ),
+                          ),
+                          _buildAdList(S.of(context).priority_first_premium, premiumStarAds),
+                          _buildAdList(S.of(context).priority_premium, premiumAds),
+                          _buildAdList(S.of(context).priority_featured, featuredAds),
+                          _buildAdList(S.of(context).priority_free, freeAds),
+                        ],
                       ),
                     ),
-                    _buildAdList(S.of(context).priority_first_premium, premiumStarAds),
-                    _buildAdList(S.of(context).priority_premium, premiumAds),
-                    _buildAdList(S.of(context).priority_featured, featuredAds),
-                    _buildAdList(S.of(context).priority_free, freeAds),
-                  ],
-                ),
-              ),
-               AnimatedPositioned(
-              duration: const Duration(milliseconds: 300),
-              curve: Curves.easeInOut,
-              top: _showFloatingFilterBar ? 0 : -160.h,
-              left: 0,
-              right: 0,
-              child: Material(
-                 elevation: 6,
-                 color: Colors.white,
-                child: Container(
-                   padding: EdgeInsets.symmetric(horizontal: 18.w, vertical: 10.h),
-                   decoration: BoxDecoration(
-                    border: Border(bottom: BorderSide(color: Colors.grey.shade300)),
-                  ),
-                   child: Column(
-                     children: [
-                       GestureDetector(
-                          onTap: () => context.pop(),
-                          child: Row(
-                            children: [
-                              Icon(Icons.arrow_back_ios, color: KTextColor, size: 17.sp),
-                              Transform.translate(
-                                offset: Offset(-3.w, 0),
-                                child: Text(S.of(context).back, style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w500, color: KTextColor)),
-                              ),
-                            ],
-                          ),
+                  AnimatedPositioned(
+                    duration: const Duration(milliseconds: 300),
+                    curve: Curves.easeInOut,
+                    top: _showFloatingFilterBar ? 0 : -160.h,
+                    left: 0,
+                    right: 0,
+                    child: Material(
+                       elevation: 6,
+                       color: Colors.white,
+                      child: Container(
+                         padding: EdgeInsets.symmetric(horizontal: 18.w, vertical: 10.h),
+                         decoration: BoxDecoration(
+                          border: Border(bottom: BorderSide(color: Colors.grey.shade300)),
                         ),
-                        SizedBox(height: 8.h),
-                        _buildFiltersRow(),
-                        SizedBox(height:4.h),
-                         LayoutBuilder(
-                           builder: (context, constraints) {
-                            bool isSmallScreen = MediaQuery.of(context).size.width <= 370;
-                             return Row(
-                               children: [
-                                 Text('${S.of(context).ad} 1000', style: TextStyle(fontSize: 12.sp, color: KTextColor, fontWeight: FontWeight.w400)),
-                                 SizedBox(width: isSmallScreen ? 35.w : 30.w),
-                                 Expanded(
-                                   child: Container(
-                                     height: 37.h,
-                                     padding: EdgeInsetsDirectional.symmetric(horizontal: isSmallScreen ? 8.w : 12.w),
-                                     decoration: BoxDecoration(border: Border.all(color: const Color(0xFF08C2C9)), borderRadius: BorderRadius.circular(8.r)),
-                                     child: Row(
-                                       children: [
-                                         SvgPicture.asset('assets/icons/locationicon.svg', width: 18.w, height: 18.h),
-                                         SizedBox(width: isSmallScreen ? 12.w : 15.w),
-                                         Expanded(
-                                           child: Text(S.of(context).sort, overflow: TextOverflow.ellipsis, style: TextStyle(fontWeight: FontWeight.w600, color: KTextColor, fontSize: 12.sp)),
-                                         ),
-                                         SizedBox(
-                                           width: isSmallScreen ? 35.w : 32.w,
-                                           child: Transform.scale(
-                                             scale: isSmallScreen ? 0.8 : .9,
-                                             child: Switch(
-                                               value: true, onChanged: (val) {}, activeColor: Colors.white, activeTrackColor: const Color(0xFF08C2C9),
-                                               inactiveThumbColor: isSmallScreen ? Colors.white : Colors.grey, inactiveTrackColor: Colors.grey[300],
-                                             ),
+                         child: Column(
+                           children: [
+                             GestureDetector(
+                                onTap: () => context.pop(),
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.arrow_back_ios, color: KTextColor, size: 17.sp),
+                                    Transform.translate(
+                                      offset: Offset(-3.w, 0),
+                                      child: Text(S.of(context).back, style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w500, color: KTextColor)),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              SizedBox(height: 8.h),
+                              _buildFiltersRow(),
+                              SizedBox(height:4.h),
+                               LayoutBuilder(
+                                 builder: (context, constraints) {
+                                  bool isSmallScreen = MediaQuery.of(context).size.width <= 370;
+                                   return Row(
+                                     children: [
+                                       Text('${S.of(context).ad} $totalAds', style: TextStyle(fontSize: 12.sp, color: KTextColor, fontWeight: FontWeight.w400)),
+                                       SizedBox(width: isSmallScreen ? 35.w : 30.w),
+                                       Expanded(
+                                         child: Container(
+                                           height: 37.h,
+                                           padding: EdgeInsetsDirectional.symmetric(horizontal: isSmallScreen ? 8.w : 12.w),
+                                           decoration: BoxDecoration(border: Border.all(color: const Color(0xFF08C2C9)), borderRadius: BorderRadius.circular(8.r)),
+                                           child: Row(
+                                             children: [
+                                               SvgPicture.asset('assets/icons/locationicon.svg', width: 18.w, height: 18.h),
+                                               SizedBox(width: isSmallScreen ? 12.w : 15.w),
+                                               Expanded(
+                                                 child: Text(S.of(context).sort, overflow: TextOverflow.ellipsis, style: TextStyle(fontWeight: FontWeight.w600, color: KTextColor, fontSize: 12.sp)),
+                                               ),
+                                               SizedBox(
+                                                 width: isSmallScreen ? 35.w : 32.w,
+                                                 child: Transform.scale(
+                                                   scale: isSmallScreen ? 0.8 : .9,
+                                                   child: Switch(
+                                                     value: false, onChanged: null, activeColor: Colors.white, activeTrackColor: const Color(0xFF08C2C9),
+                                                     inactiveThumbColor: isSmallScreen ? Colors.white : Colors.grey, inactiveTrackColor: Colors.grey[300],
+                                                   ),
+                                                 ),
+                                               ),
+                                             ],
                                            ),
                                          ),
-                                       ],
-                                     ),
-                                   ),
-                                 ),
-                               ],
-                             );
-                           },
+                                       ),
+                                     ],
+                                   );
+                                 },
+                               ),
+                           ],
                          ),
-                     ],
-                   ),
-                ),
+                      ),
+                    ),
+                  )
+                ],
               ),
-            )
-            ],
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
@@ -365,7 +494,120 @@ class _RestaurantSearchScreenState extends State<RestaurantSearchScreen>
         textDirection: TextDirection.ltr,
         child: SearchCard(
           showLine1: false, item: item, showDelete: false, onAddToFavorite: () {},
-          onDelete: () { setState(() { RestaurantDataDammy.remove(item);}); },
+          onDelete: () { 
+            // يمكن إضافة منطق حذف من API هنا إذا لزم الأمر
+          },
+        ),
+      ),
+    );
+  }
+}
+
+// Helper functions for filters
+Widget _buildGenericMultiSelectField<T>(BuildContext context, String title, List<T> selectedValues, List<T> allItems, Function(List<T>) onConfirm, {required String Function(T) displayNamer, bool isLoading = false, bool isFilter = true}) {
+  String displayText = isLoading ? "loading" : selectedValues.isEmpty ? title : selectedValues.map(displayNamer).join(', ');
+  return GestureDetector(
+    onTap: isLoading ? null : () async {
+      final result = await showModalBottomSheet<List<T>>(context: context, isScrollControlled: true, builder: (context) => _GenericMultiSelectBottomSheet(title: title, items: allItems, initialSelection: selectedValues, displayNamer: displayNamer));
+      if (result != null) onConfirm(result);
+    },
+    child: Container(
+        height: isFilter ? 35 : 48, alignment: Alignment.center, padding: const EdgeInsets.symmetric(horizontal: 8), 
+        decoration: BoxDecoration(color: Colors.white, border: Border.all(color: borderColor), borderRadius: BorderRadius.circular(8)),
+        child: Text(displayText, style: TextStyle(fontWeight: FontWeight.w500, color: KTextColor, fontSize: 9.5), overflow: TextOverflow.ellipsis, maxLines: 1)
+    ),
+  );
+}
+
+Widget _buildRangePickerField(BuildContext context, {required String title, String? fromValue, String? toValue, required String unit, required VoidCallback onTap, bool isFilter = false}) {
+    final s = S.of(context);
+    String displayText;
+      displayText = (fromValue == null || fromValue.isEmpty) && (toValue == null || toValue.isEmpty) 
+          ? title
+          : '${fromValue ?? s.from} - ${toValue ?? s.to} ${unit}'.trim();
+    
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if(!isFilter) Text(title, style: TextStyle(fontWeight: FontWeight.w600, color: KTextColor, fontSize: 14)),
+        if(!isFilter) const SizedBox(height: 4),
+        GestureDetector(
+          onTap: onTap,
+          child: Container(
+            height: isFilter ? 35 : 48, 
+            width: double.infinity, 
+            padding: const EdgeInsets.symmetric(horizontal: 8), 
+            alignment: Alignment.center,
+            decoration: BoxDecoration(color: Colors.white, border: Border.all(color: borderColor), borderRadius: BorderRadius.circular(8)),
+            child: Text(displayText, style: TextStyle(
+              fontWeight: (fromValue == null || fromValue.isEmpty) && (toValue == null || toValue.isEmpty) ? FontWeight.w500 : FontWeight.w500,
+              color: (fromValue == null || fromValue.isEmpty) && (toValue == null || toValue.isEmpty) ? KTextColor : KTextColor,
+              fontSize: 9.5), 
+              overflow: TextOverflow.ellipsis, maxLines: 1),
+          ),
+        ),
+      ],
+    );
+  }
+
+Future<Map<String, String?>?> _showRangePicker(BuildContext context, {required String title, String? initialFrom, String? initialTo, required String unit}) {
+    return showModalBottomSheet<Map<String, String?>?>(
+      context: context, backgroundColor: Colors.white, isScrollControlled: true, shape: RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (context) => _RangeSelectionBottomSheet(title: title, initialFrom: initialFrom, initialTo: initialTo, unit: unit),
+    );
+}
+
+class _GenericMultiSelectBottomSheet<T> extends StatefulWidget {
+  final String title; final List<T> items; final List<T> initialSelection; final String Function(T) displayNamer;
+  const _GenericMultiSelectBottomSheet({Key? key, required this.title, required this.items, required this.initialSelection, required this.displayNamer}) : super(key: key);
+  @override _GenericMultiSelectBottomSheetState<T> createState() => _GenericMultiSelectBottomSheetState<T>();
+}
+class _GenericMultiSelectBottomSheetState<T> extends State<_GenericMultiSelectBottomSheet<T>> {
+  late List<T> _selectedItems;
+  final TextEditingController _searchController = TextEditingController();
+  List<T> _filteredItems = [];
+  
+  @override
+  void initState() { super.initState(); _selectedItems = List.from(widget.initialSelection); _filteredItems = List.from(widget.items); _searchController.addListener(_filterItems); }
+  @override
+  void dispose() { _searchController.dispose(); super.dispose(); }
+  void _filterItems() { final query = _searchController.text.toLowerCase(); setState(() { _filteredItems = widget.items.where((item) => widget.displayNamer(item).toLowerCase().contains(query)).toList(); }); }
+  void _onItemTapped(T item) { setState(() { if(_selectedItems.contains(item)) { _selectedItems.remove(item); } else { _selectedItems.add(item); } }); }
+
+  @override
+  Widget build(BuildContext context) {
+    final s = S.of(context);
+    return Padding(
+      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom, top: 16, left: 16, right: 16),
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.7),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(widget.title, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18.sp, color: KTextColor)),
+            const SizedBox(height: 16),
+            TextFormField(controller: _searchController, decoration: InputDecoration(hintText: s.search, prefixIcon: const Icon(Icons.search), border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: borderColor)), enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: borderColor)))),
+            const SizedBox(height: 8), const Divider(),
+            Expanded(
+              child: _filteredItems.isEmpty ? Center(child: Text(s.noResultsFound)) : ListView.builder(
+                itemCount: _filteredItems.length,
+                itemBuilder: (context, index) {
+                  final item = _filteredItems[index];
+                  return CheckboxListTile(title: Text(widget.displayNamer(item)), value: _selectedItems.contains(item), activeColor: KPrimaryColor, controlAffinity: ListTileControlAffinity.leading, onChanged: (_) => _onItemTapped(item));
+                },
+              ),
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () => Navigator.pop(context, _selectedItems),
+                style: ElevatedButton.styleFrom(backgroundColor: KPrimaryColor, padding: const EdgeInsets.symmetric(vertical: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
+                child: Text(s.apply, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+              ),
+            ),
+            const SizedBox(height: 16),
+          ],
         ),
       ),
     );
@@ -409,44 +651,6 @@ Widget _buildMultiSelectField(BuildContext context, String title, List<String> s
           ),
         ),
       ],
-    );
-}
-
-Widget _buildRangePickerField(BuildContext context, {required String title, String? fromValue, String? toValue, required String unit, required VoidCallback onTap, bool isFilter = false}) {
-    final s = S.of(context);
-    String displayText;
-      displayText = (fromValue == null || fromValue.isEmpty) && (toValue == null || toValue.isEmpty) 
-          ? title
-          : '${fromValue ?? s.from} - ${toValue ?? s.to} ${unit}'.trim();
-    
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        if(!isFilter) Text(title, style: TextStyle(fontWeight: FontWeight.w600, color: KTextColor, fontSize: 14)),
-        if(!isFilter) const SizedBox(height: 4),
-        GestureDetector(
-          onTap: onTap,
-          child: Container(
-            height: isFilter ? 35 : 48, 
-            width: double.infinity, 
-            padding: const EdgeInsets.symmetric(horizontal: 8), 
-            alignment: Alignment.center,
-            decoration: BoxDecoration(color: Colors.white, border: Border.all(color: borderColor), borderRadius: BorderRadius.circular(8)),
-            child: Text(displayText, style: TextStyle(
-              fontWeight: (fromValue == null || fromValue.isEmpty) && (toValue == null || toValue.isEmpty) ? FontWeight.w500 : FontWeight.w500,
-              color: (fromValue == null || fromValue.isEmpty) && (toValue == null || toValue.isEmpty) ? KTextColor : KTextColor,
-              fontSize: 9.5), 
-              overflow: TextOverflow.ellipsis, maxLines: 1),
-          ),
-        ),
-      ],
-    );
-  }
-
-Future<Map<String, String?>?> _showRangePicker(BuildContext context, {required String title, String? initialFrom, String? initialTo, required String unit}) {
-    return showModalBottomSheet<Map<String, String?>>(
-      context: context, backgroundColor: Colors.white, isScrollControlled: true, shape: RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-      builder: (context) => _RangeSelectionBottomSheet(title: title, initialFrom: initialFrom, initialTo: initialTo, unit: unit),
     );
 }
 

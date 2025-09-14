@@ -3,6 +3,7 @@ import 'package:advertising_app/generated/l10n.dart';
 import 'package:advertising_app/presentation/providers/car_services_ad_provider.dart';
 import 'package:advertising_app/presentation/widget/custom_button.dart';
 import 'package:advertising_app/presentation/providers/car_sales_ad_provider.dart';
+import 'package:advertising_app/presentation/providers/restaurants_ad_provider.dart';
 import 'package:advertising_app/presentation/providers/settings_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -30,13 +31,15 @@ class _PlaceAnAdState extends State<PlaceAnAd> {
   }
 
   Future<void> _loadSettings() async {
-    final settingsProvider = context.read<SettingsProvider>();
-    await settingsProvider.fetchSystemSettings();
-    if (mounted) {
-      setState(() {
-        _isLoadingSettings = false;
-      });
-    }
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final settingsProvider = context.read<SettingsProvider>();
+      await settingsProvider.fetchSystemSettings();
+      if (mounted) {
+        setState(() {
+          _isLoadingSettings = false;
+        });
+      }
+    });
   }
 
 
@@ -91,6 +94,10 @@ class _PlaceAnAdState extends State<PlaceAnAd> {
       } else if (adType == 'car_service') {
         final provider = context.read<CarServicesAdProvider>();
         success = await provider.submitCarServiceAd(widget.adData!);
+        submissionError = provider.error;
+      } else if (adType == 'restaurant') {
+        final provider = context.read<RestaurantsAdProvider>();
+        success = await provider.submitRestaurantAd(widget.adData!);
         submissionError = provider.error;
       }
 

@@ -102,15 +102,20 @@ class GoogleMapsService {
   
   // Move camera to specific location
   Future<void> moveCameraToLocation(double latitude, double longitude, {double zoom = 15.0}) async {
-    if (_mapController != null) {
-      await _mapController!.animateCamera(
-        CameraUpdate.newCameraPosition(
-          CameraPosition(
-            target: LatLng(latitude, longitude),
-            zoom: zoom,
+    try {
+      if (_mapController != null) {
+        await _mapController!.animateCamera(
+          CameraUpdate.newCameraPosition(
+            CameraPosition(
+              target: LatLng(latitude, longitude),
+              zoom: zoom,
+            ),
           ),
-        ),
-      );
+        );
+      }
+    } catch (e) {
+      print('Error moving camera: $e');
+      // Silently fail - camera movement is not critical for location functionality
     }
   }
   

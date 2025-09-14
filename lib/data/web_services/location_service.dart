@@ -40,24 +40,74 @@ class LocationService {
   // Get current location using location package
   Future<loc.LocationData?> getCurrentLocationData() async {
     try {
+      print('Starting location request...');
+      
       // Check if service is enabled
-      bool serviceEnabled = await requestLocationService();
+      bool serviceEnabled = await _location.serviceEnabled();
+      print('Location service enabled: $serviceEnabled');
+      
       if (!serviceEnabled) {
-        throw Exception('Location service is not enabled');
+        print('Requesting location service...');
+        serviceEnabled = await _location.requestService();
+        print('Location service after request: $serviceEnabled');
+        
+        if (!serviceEnabled) {
+          throw Exception('خدمة الموقع غير مفعلة - يرجى تفعيل خدمة الموقع من إعدادات المتصفح أو الجهاز');
+        }
       }
       
       // Check permission
-      loc.PermissionStatus permission = await requestLocationPermission();
-      if (permission == loc.PermissionStatus.denied || 
-          permission == loc.PermissionStatus.deniedForever) {
-        throw Exception('Location permission denied');
+      loc.PermissionStatus permission = await _location.hasPermission();
+      print('Current permission status: $permission');
+      
+      if (permission == loc.PermissionStatus.denied) {
+        print('Requesting location permission...');
+        permission = await _location.requestPermission();
+        print('Permission after request: $permission');
       }
       
-      // Get location
-      return await _location.getLocation();
+      if (permission == loc.PermissionStatus.denied) {
+        throw Exception('تم رفض إذن الوصول للموقع - يرجى السماح للموقع بالوصول لموقعك الجغرافي');
+      }
+      
+      if (permission == loc.PermissionStatus.deniedForever) {
+        throw Exception('تم رفض إذن الوصول للموقع نهائياً - يرجى تفعيل الإذن من إعدادات المتصفح');
+      }
+      
+      print('Getting location data...');
+      // Get location with timeout and better error handling
+      final locationData = await _location.getLocation().timeout(
+        const Duration(seconds: 15),
+        onTimeout: () {
+          throw Exception('انتهت مهلة الحصول على الموقع - يرجى المحاولة مرة أخرى');
+        },
+      );
+      
+      print('Location data received: lat=${locationData.latitude}, lng=${locationData.longitude}');
+      return locationData;
+      
     } catch (e) {
       print('Error getting location data: $e');
-      return null;
+      String errorString = e.toString();
+      
+      // Handle specific error types
+      if (errorString.contains('PlatformException')) {
+        if (errorString.contains('PERMISSION_DENIED')) {
+          throw Exception('تم رفض إذن الوصول للموقع - يرجى السماح للموقع بالوصول لموقعك الجغرافي من إعدادات المتصفح');
+        } else if (errorString.contains('LOCATION_DISABLED')) {
+          throw Exception('خدمة الموقع غير مفعلة - يرجى تفعيل خدمة الموقع من إعدادات المتصفح');
+        } else {
+          throw Exception('خطأ في النظام - تأكد من تفعيل خدمة الموقع والسماح بالوصول للموقع في إعدادات المتصفح');
+        }
+      } else if (errorString.contains('TimeoutException')) {
+        throw Exception('انتهت مهلة الحصول على الموقع - تأكد من اتصالك بالإنترنت وحاول مرة أخرى');
+      } else if (errorString.contains('خدمة الموقع غير مفعلة') || 
+                 errorString.contains('تم رفض إذن الوصول للموقع') ||
+                 errorString.contains('انتهت مهلة الحصول على الموقع')) {
+        rethrow; // Re-throw our custom exceptions as-is
+      } else {
+        throw Exception('فشل في الحصول على الموقع - تأكد من تفعيل خدمة الموقع والسماح بالوصول للموقع: $errorString');
+      }
     }
   }
   

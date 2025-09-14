@@ -146,7 +146,11 @@ class _EditProfileState extends State<EditProfile> {
       if (user.latitude != null && user.longitude != null) {
         setState(() {
           _userLocation = LatLng(user.latitude!, user.longitude!);
-          _userAddress = user.address ?? 'Unknown location';
+          _userAddress = user.advertiserLocation ?? user.address ?? 'Unknown location';
+        });
+      } else if (user.advertiserLocation != null && user.advertiserLocation!.isNotEmpty) {
+        setState(() {
+          _userAddress = user.advertiserLocation!;
         });
       }
     }
@@ -196,12 +200,50 @@ class _EditProfileState extends State<EditProfile> {
 
   // Save location data to user profile
   Future<void> _saveLocationData() async {
-    if (_userLocation == null) return;
+    if (_userLocation == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('الرجاء تحديد الموقع أولاً'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
     
     final authProvider = context.read<AuthProvider>();
     final user = authProvider.user;
     
-    if (user == null) return;
+    if (user == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('الرجاء تسجيل الدخول أولاً'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+    
+    // Show loading indicator
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Row(
+          children: [
+            SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+              ),
+            ),
+            SizedBox(width: 16),
+            Text('جاري حفظ الموقع...'),
+          ],
+        ),
+        backgroundColor: Colors.blue,
+        duration: Duration(seconds: 2),
+      ),
+    );
     
     final success = await authProvider.updateUserProfile(
       username: user.username,
@@ -213,51 +255,160 @@ class _EditProfileState extends State<EditProfile> {
       latitude: _userLocation!.latitude,
       longitude: _userLocation!.longitude,
       address: _userAddress,
+      advertiserLocation: _userAddress, // إرسال الموقع كـ advertiser_location
     );
+    
+    // Hide loading and show result
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
     
     if (success) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Location updated successfully!'),
+          content: Row(
+            children: [
+              Icon(Icons.check_circle, color: Colors.white),
+              SizedBox(width: 8),
+              Text('تم حفظ الموقع بنجاح!'),
+            ],
+          ),
           backgroundColor: Colors.green,
         ),
       );
+      
+      // Force refresh the UI to show updated location
+      setState(() {});
     } else {
+      String errorMessage = 'فشل في حفظ الموقع';
+      if (authProvider.updateError != null) {
+        if (authProvider.updateError!.contains('500')) {
+          errorMessage = 'خطأ في الخادم، الرجاء المحاولة لاحقاً';
+        } else if (authProvider.updateError!.contains('network')) {
+          errorMessage = 'تحقق من اتصال الإنترنت';
+        } else {
+          errorMessage = 'حدث خطأ، الرجاء المحاولة مرة أخرى';
+        }
+      }
+      
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(authProvider.updateError ?? 'Failed to update location'),
+          content: Row(
+            children: [
+              const Icon(Icons.error, color: Colors.white),
+              const SizedBox(width: 8),
+              Expanded(child: Text(errorMessage)),
+            ],
+          ),
           backgroundColor: Colors.red,
+          action: SnackBarAction(
+            label: 'إعادة المحاولة',
+            textColor: Colors.white,
+            onPressed: () => _saveLocationData(),
+          ),
         ),
       );
     }
   }
 
-  // Get current location method with improved efficiency
+  // Show location help dialog
+  void _showLocationHelpDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Row(
+            children: [
+              Icon(Icons.help_outline, color: Colors.blue),
+              SizedBox(width: 8),
+              Text('كيفية تفعيل خدمة الموقع'),
+            ],
+          ),
+          content: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  'لتفعيل خدمة الموقع في المتصفح:',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                ),
+                const SizedBox(height: 12),
+                _buildHelpStep('Chrome:', '1. اضغط على أيقونة القفل 🔒 أو الموقع 📍 بجانب العنوان\n2. اختر "السماح" أو "Allow" للموقع\n3. أعد تحميل الصفحة'),
+                const SizedBox(height: 8),
+                _buildHelpStep('Firefox:', '1. اضغط على أيقونة الدرع أو القفل\n2. اختر "إيقاف الحماية" أو "Allow Location"\n3. أعد تحميل الصفحة'),
+                const SizedBox(height: 8),
+                _buildHelpStep('Safari:', '1. اذهب إلى Safari > Preferences > Websites\n2. اختر Location من القائمة\n3. اختر "Allow" للموقع'),
+                const SizedBox(height: 8),
+                _buildHelpStep('Edge:', '1. اضغط على أيقونة القفل بجانب العنوان\n2. اختر "السماح" للموقع\n3. أعد تحميل الصفحة'),
+                const SizedBox(height: 12),
+                const Text(
+                  'إذا لم تنجح الطرق السابقة:',
+                  style: TextStyle(fontWeight: FontWeight.bold, color: Colors.orange),
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  '• تأكد من تفعيل خدمة الموقع في إعدادات الجهاز\n• أعد تشغيل المتصفح\n• جرب متصفح آخر\n• تأكد من اتصالك بالإنترنت',
+                  style: TextStyle(fontSize: 14),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('فهمت'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                _getCurrentLocation();
+              },
+              child: const Text('جرب الآن'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildHelpStep(String browser, String steps) {
+    return Container(
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: Colors.grey[100],
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.grey[300]!),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            browser,
+            style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.blue),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            steps,
+            style: const TextStyle(fontSize: 13,color:KTextColor),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Get current location method
   Future<void> _getCurrentLocation() async {
-    if (_isLoadingLocation) return; // Prevent multiple simultaneous calls
-    
-    print('Locate Me button pressed');
     setState(() {
       _isLoadingLocation = true;
     });
     
     try {
-      // Show loading snackbar
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('جاري تحديد موقعك...'),
-          backgroundColor: Color(0xFF01547E),
-          duration: Duration(seconds: 2),
-        ),
-      );
-
       final mapsProvider = context.read<GoogleMapsProvider>();
       await mapsProvider.getCurrentLocation();
 
       if (mapsProvider.currentLocationData != null) {
         final locationData = mapsProvider.currentLocationData!;
         
-        // Convert coordinates to address first
+        // Convert coordinates to address
         final address = await mapsProvider.getAddressFromCoordinates(
             locationData.latitude!, locationData.longitude!);
         
@@ -267,34 +418,37 @@ class _EditProfileState extends State<EditProfile> {
           _userAddress = address ?? 'موقع غير معروف';
         });
 
-        // Move camera to current location with higher zoom
+        // Move camera to current location
         await mapsProvider.moveCameraToLocation(
             locationData.latitude!, locationData.longitude!,
             zoom: 16.0);
 
-        print('Address found: ${_userAddress}');
-
-        // Save location data automatically to database and secure storage
+        // Save location data
         await _saveLocationData();
         await _saveLocationToStorage();
 
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('تم تحديث الموقع بنجاح!'),
+            content: Text('تم تحديت الموقع بنجاح!'),
             backgroundColor: Colors.green,
             duration: Duration(seconds: 2),
           ),
         );
       } else {
-        throw Exception('فشل في الحصول على الموقع');
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('فشل في تحديد الموقع'),
+            backgroundColor: Colors.red,
+            duration: Duration(seconds: 2),
+          ),
+        );
       }
     } catch (e) {
-      print('Location error: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('فشل في تحديد الموقع: $e'),
+          content: Text('خطأ في تحديد الموقع: ${e.toString()}'),
           backgroundColor: Colors.red,
-          duration: const Duration(seconds: 4),
+          duration: const Duration(seconds: 3),
         ),
       );
     } finally {
@@ -311,31 +465,48 @@ class _EditProfileState extends State<EditProfile> {
       double lat = _userLocation?.latitude ?? 25.2048;
       double lng = _userLocation?.longitude ?? 55.2708;
       
-      // Create Google Maps URL
-      final String googleMapsUrl = 'https://www.google.com/maps/search/?api=1&query=$lat,$lng';
+      // Save current location data before opening maps
+      if (_userLocation != null && _userAddress != null) {
+        await _saveLocationData();
+        await _saveLocationToStorage();
+      }
+      
+      // Create Google Maps URL with better parameters
+      final String googleMapsUrl = 'https://www.google.com/maps/place/$lat,$lng/@$lat,$lng,15z';
       final Uri url = Uri.parse(googleMapsUrl);
       
       // Try to launch Google Maps
       if (await canLaunchUrl(url)) {
         await launchUrl(url, mode: LaunchMode.externalApplication);
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('تم فتح خرائط جوجل وحفظ الموقع'),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 3),
+          ),
+        );
       } else {
         // Fallback to web version
-        final String webUrl = 'https://maps.google.com/?q=$lat,$lng';
+        final String webUrl = 'https://maps.google.com/?q=$lat,$lng&z=15';
         final Uri webUri = Uri.parse(webUrl);
         await launchUrl(webUri, mode: LaunchMode.externalApplication);
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('تم فتح خرائط جوجل (نسخة الويب) وحفظ الموقع'),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 3),
+          ),
+        );
       }
-      
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Opening Google Maps...'),
-          backgroundColor: Colors.blue,
-        ),
-      );
     } catch (e) {
+      print('Error opening Google Maps: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Failed to open Google Maps: $e'),
+          content: Text('فشل في فتح خرائط جوجل: $e'),
           backgroundColor: Colors.red,
+          duration: const Duration(seconds: 4),
         ),
       );
     }
@@ -413,7 +584,9 @@ class _EditProfileState extends State<EditProfile> {
     return Consumer<AuthProvider>(
       builder: (context, authProvider, child) {
         // Update text fields whenever the user data changes
-        _updateTextFields(authProvider.user);
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _updateTextFields(authProvider.user);
+        });
 
         return Scaffold(
           backgroundColor: Colors.white,
@@ -501,7 +674,11 @@ class _EditProfileState extends State<EditProfile> {
                             
                             Text(S.of(context).advertiserLocation, style: TextStyle(color: KTextColor, fontSize: 16.sp, fontWeight: FontWeight.w500)),
                             const SizedBox(height: 5),
-                            Text(_userAddress ?? S.of(context).address, style: TextStyle(color: KTextColor, fontSize: 16.sp, fontWeight: FontWeight.w500), overflow: TextOverflow.ellipsis),
+                            Text(
+                              _userAddress ?? S.of(context).address,
+                              style: TextStyle(color: KTextColor, fontSize: 16.sp, fontWeight: FontWeight.w500),
+                              overflow: TextOverflow.ellipsis,
+                            ),
                             const SizedBox(height: 5),
                             
                             _buildMapSection(context),

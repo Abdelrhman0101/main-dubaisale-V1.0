@@ -11,6 +11,7 @@ class UserModel {
   final double? latitude;
   final double? longitude;
   final String? address;
+  final String? advertiserLocation;
 
   UserModel({
     required this.id,
@@ -25,6 +26,7 @@ class UserModel {
     this.latitude,
     this.longitude,
     this.address,
+    this.advertiserLocation,
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
@@ -41,6 +43,7 @@ class UserModel {
       latitude: json['latitude']?.toDouble(),
       longitude: json['longitude']?.toDouble(),
       address: json['address'],
+      advertiserLocation: json['advertiser_location'],
     );
   }
 }

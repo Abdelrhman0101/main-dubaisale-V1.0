@@ -14,6 +14,11 @@ import 'package:advertising_app/presentation/providers/car_services_provider.dar
 import 'package:advertising_app/presentation/providers/car_services_offers_provider.dart';
 import 'package:advertising_app/presentation/providers/manage_ads_provider.dart';
 import 'package:advertising_app/presentation/providers/google_maps_provider.dart';
+import 'package:advertising_app/presentation/providers/restaurant_details_provider.dart';
+import 'package:advertising_app/presentation/providers/restaurants_ad_provider.dart';
+import 'package:advertising_app/presentation/providers/restaurant_ad_provider.dart';
+import 'package:advertising_app/presentation/providers/restaurants_info_provider.dart';
+import 'package:advertising_app/data/repository/restaurants_repository.dart';
 import 'package:advertising_app/presentation/providers/settings_provider.dart';
 import 'package:advertising_app/data/repository/settings_repository.dart';
 import 'package:flutter/material.dart';
@@ -37,6 +42,7 @@ void main() async {
   final CarAdRepository carAdRepository = CarAdRepository(apiService); // <-- تم تعريفه هنا
   final ManageAdsRepository myAdsRepository = ManageAdsRepository(apiService);
   final SettingsRepository settingsRepository = SettingsRepository(apiService);
+  final RestaurantsRepository restaurantsRepository = RestaurantsRepository(apiService);
   final GoogleApiService googleApiService = GoogleApiService();
   final GoogleMapsService googleMapsService = GoogleMapsService(googleApiService);
 
@@ -64,12 +70,19 @@ void main() async {
           create: (_) => SettingsProvider(settingsRepository), // <-- Settings Provider
         ),
 
+ ChangeNotifierProvider(create: (_) => RestaurantDetailsProvider()),
 
          ChangeNotifierProvider(create: (_) => CarServicesInfoProvider()),
            ChangeNotifierProvider(create: (_) => CarServicesAdProvider()),
           ChangeNotifierProvider(create: (_) => CarServicesProvider()),
           ChangeNotifierProvider(create: (_) => CarServicesOffersProvider()),
-  
+        ChangeNotifierProvider(create: (_) => RestaurantsInfoProvider()),
+        ChangeNotifierProxyProvider<RestaurantsInfoProvider, RestaurantAdProvider>(
+          create: (context) => RestaurantAdProvider(Provider.of<RestaurantsInfoProvider>(context, listen: false)),
+          update: (context, restaurantsInfoProvider, previous) => previous ?? RestaurantAdProvider(restaurantsInfoProvider),
+        ),
+        ChangeNotifierProvider(create: (_) => RestaurantsAdProvider()),
+ 
         // يمكنك إضافة أي providers مستقبلية هنا
       ],
       child: const RootApp(),

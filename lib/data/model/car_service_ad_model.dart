@@ -44,14 +44,23 @@ class CarServiceModel {
   factory CarServiceModel.fromJson(Map<String, dynamic> json) {
     // معالجة الصور المصغرة
     List<String> thumbs = [];
-    if (json['thumbnail_images'] != null && json['thumbnail_images'] is String) {
-      try {
-        final decoded = jsonDecode(json['thumbnail_images']);
-        if (decoded is List) {
-          thumbs = decoded.map((e) => e.toString()).toList();
+    
+    // البحث عن thumbnail_images_urls أولاً (الاسم الصحيح من API)
+    var thumbnailData = json['thumbnail_images_urls'] ?? json['thumbnail_images'];
+    
+    if (thumbnailData != null) {
+      if (thumbnailData is String) {
+        try {
+          final decoded = jsonDecode(thumbnailData);
+          if (decoded is List) {
+            thumbs = decoded.map((e) => e.toString()).toList();
+          }
+        } catch (e) {
+          // في حال فشل التحويل، تبقى القائمة فارغة
         }
-      } catch (e) {
-        // في حال فشل التحويل، تبقى القائمة فارغة
+      } else if (thumbnailData is List) {
+        // إذا كانت البيانات عبارة عن قائمة مباشرة
+        thumbs = thumbnailData.map((e) => e.toString()).toList();
       }
     }
     
@@ -70,7 +79,7 @@ class CarServiceModel {
       phoneNumber: json['phone_number'] ?? 'N/A',
       whatsapp: json['whatsapp'],
       mainImage: json['main_image'],
-      thumbnailImages: thumbs,
+      thumbnailImages: ['thumbnail_images_urls'],
       location: json['location'],
       createdAt: json['created_at'],
     );

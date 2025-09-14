@@ -2,6 +2,7 @@ import 'favorite_item_interface_model.dart';
 import 'ad_priority.dart';
 
 class CarSalesModel implements FavoriteItemInterface {
+
   final String title;
   final String price;
   final String year;
@@ -35,6 +36,7 @@ final String steeringSide;
   CarSalesModel(
    
     {
+
   required  this.image ,
   required  this.carType,
   required  this.transType,
@@ -70,6 +72,10 @@ final String steeringSide;
 
   @override
   List<String> get images => _images;
+  
+  @override
+  // TODO: implement id
+  get id => throw UnimplementedError();
 }
 
 

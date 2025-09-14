@@ -43,9 +43,9 @@ Future<bool> submitCarServiceAd(Map<String, dynamic> adData) async {
         advertiserName: adData['advertiser_name'],
         phoneNumber: adData['phone_number'],
         whatsapp: adData['whatsapp'],
-        location: adData['location'],
+        location: adData['advertiser_location'],
         mainImage: adData['mainImage'],
-        thumbnailImages: (adData['thumbnailImages'] as List<File>).isNotEmpty ? adData['thumbnailImages'] : null,
+        thumbnailImages: (adData['thumbnail_images_urls'] as List<File>?) != null && (adData['thumbnail_images_urls'] as List<File>).isNotEmpty ? adData['thumbnail_images_urls'] : null,
         
         // ++ أهم جزء: تمرير بيانات الخطة التي كانت مفقودة ++
         planType: adData['planType'],

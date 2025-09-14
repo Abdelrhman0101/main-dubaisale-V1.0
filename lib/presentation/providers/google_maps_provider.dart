@@ -80,14 +80,19 @@ class GoogleMapsProvider extends ChangeNotifier {
     _clearError();
     
     try {
+      print('GoogleMapsProvider: Starting location request...');
       _currentLocationData = await _locationService.getCurrentLocationData();
       
       if (_currentLocationData != null) {
+        print('GoogleMapsProvider: Location data received successfully');
+        
         // Get address for current location
         _currentAddress = await _mapsService.getAddressFromCoordinates(
           _currentLocationData!.latitude!,
           _currentLocationData!.longitude!,
         );
+        
+        print('GoogleMapsProvider: Address resolved: $_currentAddress');
         
         // Move camera to current location
         await _mapsService.moveCameraToLocation(
@@ -102,9 +107,28 @@ class GoogleMapsProvider extends ChangeNotifier {
           title: 'موقعي الحالي',
           snippet: _currentAddress,
         );
+        
+        print('GoogleMapsProvider: Location process completed successfully');
+      } else {
+        throw Exception('فشل في الحصول على بيانات الموقع - لم يتم إرجاع أي بيانات');
       }
     } catch (e) {
-      _setError('خطأ في الحصول على الموقع الحالي: $e');
+      print('GoogleMapsProvider: Error occurred: $e');
+      String errorMessage = e.toString();
+      
+      // Handle specific error messages with more helpful instructions
+      if (errorMessage.contains('خدمة الموقع غير مفعلة')) {
+        _setError('خدمة الموقع غير مفعلة\n\nللحل:\n• في Chrome: اضغط على أيقونة القفل بجانب العنوان واختر "السماح" للموقع\n• في Firefox: اضغط على أيقونة الدرع واختر "إيقاف الحماية"\n• تأكد من تفعيل خدمة الموقع في إعدادات الجهاز');
+      } else if (errorMessage.contains('تم رفض إذن الوصول للموقع')) {
+        _setError('تم رفض إذن الوصول للموقع\n\nللحل:\n• اضغط على أيقونة القفل/الموقع بجانب عنوان الموقع\n• اختر "السماح" أو "Allow" للوصول للموقع\n• أعد تحميل الصفحة وحاول مرة أخرى');
+      } else if (errorMessage.contains('انتهت مهلة الحصول على الموقع')) {
+        _setError('انتهت مهلة الحصول على الموقع\n\nللحل:\n• تأكد من اتصالك بالإنترنت\n• تأكد من تفعيل خدمة الموقع\n• حاول مرة أخرى بعد قليل');
+      } else if (errorMessage.contains('خطأ في النظام')) {
+        _setError('خطأ في النظام\n\nللحل:\n• تأكد من تفعيل خدمة الموقع في المتصفح\n• امنح الإذن للموقع للوصول لموقعك\n• جرب متصفح آخر إذا استمرت المشكلة');
+      } else {
+        _setError('خطأ في الحصول على الموقع\n\nتفاصيل الخطأ: $errorMessage\n\nللحل:\n• تأكد من تفعيل خدمة الموقع\n• امنح الإذن للموقع\n• تأكد من اتصالك بالإنترنت');
+      }
+      rethrow; // Re-throw to allow calling code to handle the error
     } finally {
       _setLoading(false);
     }

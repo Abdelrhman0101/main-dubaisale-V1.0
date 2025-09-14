@@ -2,6 +2,9 @@ import 'package:advertising_app/data/model/favorite_item_interface_model.dart';
 import 'ad_priority.dart';
 
 class RealEstateModel implements FavoriteItemInterface {
+
+  @override
+  String get id => title;
   final String title;
   final String price;
   final String image;

@@ -189,7 +189,16 @@ GoRouter createRouter({
        GoRoute(path: '/job-details', builder: (context, state) => JobDetailsScreen (job: state.extra as JobModel )),
        GoRoute(path: '/car-rent-details', builder: (context, state) => CarRentDetailsScreen (car_rent: state.extra as CarRentModel )),
        GoRoute(path: '/car-service-details', builder: (context, state) => CarServiceDetails (car_service: state.extra as CarServiceModel )),
-       GoRoute(path: '/restaurant-details', builder: (context, state) => RestaurantDetailsScreen (restaurant: state.extra as RestaurantModel )),
+       GoRoute(
+         path: '/restaurant-details/:adId',
+         builder: (context, state) {
+           final adId = int.tryParse(state.pathParameters['adId'] ?? '') ?? 0;
+           return RestaurantDetailsScreen(
+             restaurant: state.extra as RestaurantModel,
+             adId: adId
+           );
+         }
+       ),
        GoRoute(path: '/other_service-details', builder: (context, state) => OtherServicesDetailsScreen (other_service: state.extra as OtherServiceModel )),
        GoRoute(path: '/offer_box', builder: (context, state) => OffersBoxScreen()),
        GoRoute(path: '/car_rent', builder: (context, state) => CarRentScreen()),
@@ -213,7 +222,10 @@ GoRouter createRouter({
          final filters = state.extra as Map<String, String>?;
          return CarServiceSearchScreen(initialFilters: filters);
        }),
-       GoRoute(path: '/restaurant_search', builder: (context, state) => RestaurantSearchScreen()),
+       GoRoute(path: '/restaurant_search', builder: (context, state) {
+         final filters = state.extra as Map<String, dynamic>?;
+         return RestaurantSearchScreen(filters: filters);
+       }),
        GoRoute(path: '/other_service_search', builder: (context, state) => OtherServiceSearchScreen()),
        GoRoute(path: '/job_search', builder: (context, state) => JobSearchScreen()),
        GoRoute(path: '/ads_category', builder: (context, state) => AdsCategoryScreen()),

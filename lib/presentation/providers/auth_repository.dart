@@ -164,7 +164,7 @@ class AuthProvider with ChangeNotifier {
   Future<bool> updateUserProfile({
     required String username, required String email, required String phone,
     String? whatsapp, String? advertiserName, String? advertiserType,
-    double? latitude, double? longitude, String? address,
+    double? latitude, double? longitude, String? address, String? advertiserLocation,
   }) async {
     _isUpdating = true; 
     _updateError = null;
@@ -175,7 +175,7 @@ class AuthProvider with ChangeNotifier {
       final updatedUser = await _authRepository.updateProfile(
           token: token, username: username, email: email, phone: phone,
           whatsapp: whatsapp, advertiserName: advertiserName, advertiserType: advertiserType,
-          latitude: latitude, longitude: longitude, address: address
+          latitude: latitude, longitude: longitude, address: address, advertiserLocation: advertiserLocation
       );
       _user = updatedUser;
       

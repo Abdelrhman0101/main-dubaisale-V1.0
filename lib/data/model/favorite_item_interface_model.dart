@@ -12,4 +12,6 @@ abstract class FavoriteItemInterface {
   List<String> get images;
 
   AdPriority get priority;
+
+  get id => null;
 }

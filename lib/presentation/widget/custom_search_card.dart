@@ -47,6 +47,66 @@ class _SearchCardState extends State<SearchCard> {
     super.dispose();
   }
 
+  Widget _buildImageWidget(String imagePath) {
+    // Check if it's a network URL or local asset
+    if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
+      return Image.network(
+        imagePath,
+        fit: BoxFit.cover,
+        width: double.infinity,
+        // إضافة معاملات لتعطيل الكاش وإجبار تحميل الصور الجديدة من API
+        cacheWidth: null,
+        cacheHeight: null,
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0',
+        },
+        loadingBuilder: (context, child, loadingProgress) {
+          if (loadingProgress == null) return child;
+          return const Center(child: CircularProgressIndicator());
+        },
+        errorBuilder: (context, error, stackTrace) {
+          // طباعة الخطأ في الـ debugging بدلاً من عرض صورة افتراضية
+          debugPrint('خطأ في تحميل الصورة من API: $error');
+          debugPrint('مسار الصورة: $imagePath');
+          return Container(
+            color: Colors.grey[300],
+            child: const Center(
+              child: Icon(
+                Icons.broken_image,
+                color: Colors.grey,
+                size: 50,
+              ),
+            ),
+          );
+        },
+      );
+    } else {
+      // Local asset
+      return Image.asset(
+        imagePath,
+        fit: BoxFit.cover,
+        width: double.infinity,
+        errorBuilder: (context, error, stackTrace) {
+          // طباعة الخطأ في الـ debugging بدلاً من عرض صورة افتراضية
+          debugPrint('خطأ في تحميل الصورة المحلية: $error');
+          debugPrint('مسار الصورة: $imagePath');
+          return Container(
+            color: Colors.grey[300],
+            child: const Center(
+              child: Icon(
+                Icons.broken_image,
+                color: Colors.grey,
+                size: 50,
+              ),
+            ),
+          );
+        },
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final item = widget.item;
@@ -72,19 +132,17 @@ class _SearchCardState extends State<SearchCard> {
                   itemBuilder: (context, index) => ClipRRect(
                     borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
                       child: item.images.isEmpty 
-                          ? Image.asset('assets/images/placeholder.png', fit: BoxFit.cover) // Placeholder
-                          : Image.network(
-                            item.images[index],
-                            fit: BoxFit.cover,
-                            width: double.infinity,
-                            loadingBuilder: (context, child, loadingProgress) {
-                              if (loadingProgress == null) return child;
-                              return const Center(child: CircularProgressIndicator());
-                            },
-                            errorBuilder: (context, error, stackTrace) {
-                              return const Center(child: Icon(Icons.error_outline, color: Colors.red, size: 50));
-                            },
-                          ),
+                          ? Container(
+                              color: Colors.grey[300],
+                              child: const Center(
+                                child: Icon(
+                                  Icons.image_not_supported,
+                                  color: Colors.grey,
+                                  size: 50,
+                                ),
+                              ),
+                            )
+                          : _buildImageWidget(item.images[index]),
                         ),
                       ),
               ),

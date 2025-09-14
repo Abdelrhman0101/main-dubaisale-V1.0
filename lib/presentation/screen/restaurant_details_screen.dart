@@ -13,7 +13,7 @@ import 'package:readmore/readmore.dart';
 
 class RestaurantDetailsScreen extends StatefulWidget {
   final RestaurantModel restaurant;
-  const RestaurantDetailsScreen({super.key, required this.restaurant});
+  const RestaurantDetailsScreen({super.key, required this.restaurant, required int adId});
 
   @override
   State<RestaurantDetailsScreen> createState() =>

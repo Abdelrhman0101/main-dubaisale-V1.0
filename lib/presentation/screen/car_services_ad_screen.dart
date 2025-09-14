@@ -4,6 +4,7 @@ import 'dart:io';
 
 import 'package:advertising_app/presentation/providers/car_services_info_provider.dart';
 import 'package:advertising_app/presentation/providers/google_maps_provider.dart';
+import 'package:advertising_app/presentation/providers/auth_repository.dart';
 import 'package:advertising_app/utils/phone_number_formatter.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter/foundation.dart';
@@ -65,7 +66,17 @@ class _CarServicesAdScreenState extends State<CarServicesAdScreen> {
       final token = await const FlutterSecureStorage().read(key: 'auth_token');
       if (token != null && mounted) {
         // جلب جميع البيانات اللازمة لهذه الشاشة
-        await context.read<CarServicesInfoProvider>().fetchAllData(token: token);
+        final infoProvider = context.read<CarServicesInfoProvider>();
+        await infoProvider.fetchAllData(token: token);
+        
+        // طباعة البيانات المحملة للتحقق
+        print('Advertiser Names Loaded: ${infoProvider.advertiserNames}');
+        print('Phone Numbers Loaded: ${infoProvider.phoneNumbers}');
+        print('Locations Loaded: ${infoProvider.locations}');
+        
+        // التحقق من بيانات البروفايل
+        final authProvider = context.read<AuthProvider>();
+        await _checkUserProfileData(authProvider);
       }
     });
   }
@@ -93,12 +104,23 @@ class _CarServicesAdScreenState extends State<CarServicesAdScreen> {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('لقد أضفت الحد الأقصى من الصور ($maxImages صور).'), backgroundColor: Colors.orange));
       return;
     }
-    final List<XFile> pickedImages = await _picker.pickMultiImage(imageQuality: 85, limit: remainingSlots);
+    final List<XFile> pickedImages = await _picker.pickMultiImage(imageQuality: 85);
     if (pickedImages.isNotEmpty) {
-      setState(() {
-        _thumbnailImages.addAll(pickedImages.map((img) => File(img.path)));
-      });
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('تم إضافة ${pickedImages.length} صورة بنجاح.'), backgroundColor: Colors.green));
+      int addedCount = 0;
+      for (var img in pickedImages) {
+        if (_thumbnailImages.length < maxImages) {
+          _thumbnailImages.add(File(img.path));
+          addedCount++;
+        }
+      }
+      setState(() {});
+      if (addedCount < pickedImages.length) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('تم الوصول للحد الأقصى. تم إضافة $addedCount من ${pickedImages.length} صورة فقط.'),
+            backgroundColor: Colors.orange));
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('تم إضافة ${pickedImages.length} صورة بنجاح.'), backgroundColor: Colors.green));
+      }
     }
   }
 
@@ -107,6 +129,138 @@ class _CarServicesAdScreenState extends State<CarServicesAdScreen> {
     setState(() {
       _thumbnailImages.removeAt(index);
     });
+  }
+
+  // دالة للتحقق من بيانات البروفايل المطلوبة
+  Future<void> _checkUserProfileData(AuthProvider authProvider) async {
+    // جلب بيانات المستخدم إذا لم تكن متاحة
+    if (authProvider.user == null) {
+      await authProvider.fetchUserProfile();
+    }
+
+    final user = authProvider.user;
+    if (user == null) return;
+
+    // تحديد الموقع من بيانات المستخدم إذا كان متوفراً
+    if (user.advertiserLocation != null && user.advertiserLocation!.trim().isNotEmpty) {
+      setState(() {
+        selectedLocation = user.advertiserLocation!;
+      });
+    }
+
+    List<String> missingFields = [];
+
+    // التحقق من الحقول المطلوبة
+    if (user.phone.trim().isEmpty) {
+      missingFields.add('رقم الهاتف');
+    }
+    if ((user.advertiserLocation == null || user.advertiserLocation!.trim().isEmpty) &&
+        (user.latitude == null || user.longitude == null)) {
+      missingFields.add('الموقع');
+    }
+
+    // إظهار التنبيه إذا كانت هناك حقول ناقصة
+    if (missingFields.isNotEmpty && mounted) {
+      _showProfileIncompleteDialog(missingFields);
+    }
+  }
+
+  // دالة لإظهار تنبيه البيانات الناقصة
+  void _showProfileIncompleteDialog(List<String> missingFields) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return WillPopScope(
+          onWillPop: () async {
+            // عند الضغط على زر الرجوع، الخروج من الصفحة بالكامل
+            Navigator.of(context).pop(); // إغلاق الـ dialog
+            Navigator.of(context).pop(); // العودة إلى الشاشة السابقة
+            return false;
+          },
+          child: AlertDialog(
+            backgroundColor: Colors.white,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            title: const Text("Incomplete profile",
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: KTextColor,
+                fontSize: 18,
+              ),
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'You must complete the following fields in your profile before adding the advertisement:',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: KTextColor,
+                  ),
+                ),
+                const SizedBox(height: 15),
+                ...missingFields
+                    .map((field) => Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 4),
+                          child: Row(
+                            children: [
+                              const Icon(
+                                Icons.error_outline,
+                                color: Color(0xFFE74C3C),
+                                size: 18,
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Text(
+                                  field,
+                                  style: const TextStyle(
+                                    color: Color(0xFFE74C3C),
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ))
+                    .toList(),
+              ],
+            ),
+            actions: [
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () {
+                    context.push('/editprofile');
+                    Navigator.of(context).pop();
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Color.fromRGBO(1, 84, 126, 1),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    elevation: 2,
+                  ),
+                  child: const Text(
+                    'Go to Profile',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 
    // --- دوال الخريطة (منسوخة من شاشة السيارات مع تعديلات بسيطة) ---
@@ -217,14 +371,9 @@ class _CarServicesAdScreenState extends State<CarServicesAdScreen> {
           'advertiser_name': selectedAdvertiserName,
           'phone_number': formattedPhone,
           'whatsapp': formattedWhatsApp,
-          'location': selectedLocation,
-          'latitude': selectedLatLng?.latitude,
-          'longitude': selectedLatLng?.longitude,
+          'advertiser_location': selectedLocation,
           'mainImage': _mainImage!,
           'thumbnailImages': _thumbnailImages.isNotEmpty ? _thumbnailImages : null,
-          'plan_type': null,
-          'plan_days': null,
-          'plan_expires_at': null,
       };
 
       // طباعة البيانات المرسلة
@@ -241,9 +390,7 @@ class _CarServicesAdScreenState extends State<CarServicesAdScreen> {
       print('advertiser_name: ${adData['advertiser_name']}');
       print('phone_number: ${adData['phone_number']}');
       print('whatsapp: ${adData['whatsapp']}');
-      print('location: ${adData['location']}');
-      print('latitude: ${adData['latitude']}');
-      print('longitude: ${adData['longitude']}');
+      print('advertiser_location: ${adData['advertiser_location']}');
       print('mainImage: ${adData['mainImage'] != null ? 'File selected' : 'null'}');
       print('thumbnailImages: ${adData['thumbnailImages'] != null ? '${(_thumbnailImages.length)} images' : 'null'}');
       print('plan_type: ${adData['plan_type']}');
@@ -300,54 +447,74 @@ class _CarServicesAdScreenState extends State<CarServicesAdScreen> {
                              _buildSingleSelectField(context, s.district, selectedDistrict, infoProvider.getDistrictsForEmirate(selectedEmirate), (selection) {
                                setState(() => selectedDistrict = selection);
                              }, isRequired: true),
+                          _buildTitledTextFormField(s.area, _areaController, borderColor, currentLocale, hintText: "Industrial Area 2", isRequired: true),
+               
+                          
                           ]),
                           const SizedBox(height: 7),
 
-                          _buildTitledTextFormField(s.area, _areaController, borderColor, currentLocale, hintText: "Industrial Area 2", isRequired: true),
-                          const SizedBox(height: 7),
+                                   
 
                            _buildFormRow([
                             _buildSingleSelectField(context, s.serviceType, selectedServiceType, infoProvider.serviceTypeNames, (selection) {
                                 setState(() => selectedServiceType = selection);
                              }, isRequired: true),
                             _buildTitledTextFormField(s.serviceName, _serviceNameController, borderColor, currentLocale, hintText: "Change Oil", isRequired: true),
+                          _buildTitledTextFormField(s.price, _priceController, borderColor, currentLocale, hintText: '300', isNumber: true, isRequired: true),
+                
+                         
+                         
+                         
                           ]),
                            const SizedBox(height: 7),
-                          _buildTitledTextFormField(s.price, _priceController, borderColor, currentLocale, hintText: '300', isNumber: true, isRequired: true),
+                          
+                          _buildTitledTextFormField(s.title, _titleController, borderColor, currentLocale, hintText: "Change Oil With Good Quality", minLines: 3, maxLines: 3, isRequired: true),
                           const SizedBox(height: 7),
                           
-                          _buildTitledTextFormField(s.title, _titleController, borderColor, currentLocale, hintText: "Change Oil With Good Quality", minLines: 2, isRequired: true),
-                          const SizedBox(height: 7),
-                          
-                           TitledSelectOrAddField(
-                             title: s.advertiserName, 
-                             value: selectedAdvertiserName,
-                             items: infoProvider.advertiserNames,
-                             onChanged: (newValue) => setState(() => selectedAdvertiserName = newValue),
-                             onAddNew: (value) async {
-                                final token = await const FlutterSecureStorage().read(key: 'auth_token');
-                                if (token != null) {
-                                  final success = await infoProvider.addContactItem('advertiser_names', value, token: token);
-                                  if (success) setState(() => selectedAdvertiserName = value);
-                                }
-                              },
+                           Consumer<CarServicesInfoProvider>(
+                             builder: (context, provider, child) {
+                               // التأكد من أن البيانات محملة
+                               final advertiserNames = provider.advertiserNames ?? [];
+                               print('Building advertiser field with ${advertiserNames.length} names: $advertiserNames');
+                               
+                               return TitledSelectOrAddField(
+                                 title: s.advertiserName, 
+                                 value: selectedAdvertiserName,
+                                 items: advertiserNames,
+                                 onChanged: (newValue) => setState(() => selectedAdvertiserName = newValue),
+                                 onAddNew: (value) async {
+                                    final token = await const FlutterSecureStorage().read(key: 'auth_token');
+                                    if (token != null) {
+                                      final success = await provider.addContactItem('advertiser_names', value, token: token);
+                                      if (success) setState(() => selectedAdvertiserName = value);
+                                    }
+                                  },
+                               );
+                             },
                            ),
                            const SizedBox(height: 7),
 
                           _buildFormRow([
-                             TitledSelectOrAddField(
-                               title: s.phoneNumber, 
-                               value: selectedPhoneNumber,
-                               items: infoProvider.phoneNumbers,
-                               onChanged: (newValue) => setState(() => selectedPhoneNumber = newValue),
-                               onAddNew: (value) async {
-                                 final token = await const FlutterSecureStorage().read(key: 'auth_token');
-                                 if(token != null) {
-                                   final success = await infoProvider.addContactItem('phone_numbers', value, token: token);
-                                   if(success) setState(() => selectedPhoneNumber = value);
-                                 }
+                             Consumer<CarServicesInfoProvider>(
+                               builder: (context, provider, child) {
+                                 final phoneNumbers = provider.phoneNumbers ?? [];
+                                 print('Building phone field with ${phoneNumbers.length} numbers: $phoneNumbers');
+                                 
+                                 return TitledSelectOrAddField(
+                                   title: s.phoneNumber, 
+                                   value: selectedPhoneNumber,
+                                   items: phoneNumbers,
+                                   onChanged: (newValue) => setState(() => selectedPhoneNumber = newValue),
+                                   onAddNew: (value) async {
+                                     final token = await const FlutterSecureStorage().read(key: 'auth_token');
+                                     if(token != null) {
+                                       final success = await provider.addContactItem('phone_numbers', value, token: token);
+                                       if(success) setState(() => selectedPhoneNumber = value);
+                                     }
+                                   },
+                                   isNumeric: true
+                                 );
                                },
-                               isNumeric: true
                              ),
                              TitledSelectOrAddField(
                                title: s.whatsApp, 
@@ -414,7 +581,7 @@ class _CarServicesAdScreenState extends State<CarServicesAdScreen> {
                               children: [
                                 SvgPicture.asset('assets/icons/locationicon.svg', width: 20.w, height: 20.h),
                                 SizedBox(width: 8.w),
-                                Expanded(child: Text(selectedLocation.isNotEmpty ? selectedLocation : "s.noLocationSelected", style: TextStyle(fontSize: 14.sp, color: KTextColor, fontWeight: FontWeight.w500))),
+                                Expanded(child: Text(selectedLocation.isNotEmpty ? selectedLocation : "noLocationSelected", style: TextStyle(fontSize: 14.sp, color: KTextColor, fontWeight: FontWeight.w500))),
                               ],
                             ),
                           ),
@@ -449,12 +616,13 @@ class _CarServicesAdScreenState extends State<CarServicesAdScreen> {
   Widget _buildFormRow(List<Widget> children) {
     return Row(crossAxisAlignment: CrossAxisAlignment.start, children: children.map((child) => Expanded(child: Padding(padding: const EdgeInsets.symmetric(horizontal: 4.0), child: child))).toList());
   }
-  Widget _buildTitledTextFormField(String title, TextEditingController controller, Color borderColor, String currentLocale, {bool isNumber = false, String? hintText, int minLines = 1, bool isRequired = false}) {
+  Widget _buildTitledTextFormField(String title, TextEditingController controller, Color borderColor, String currentLocale, {bool isNumber = false, String? hintText, int minLines = 1, int? maxLines, bool isRequired = false}) {
      return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       Text(title, style: TextStyle(fontWeight: FontWeight.w600, color: KTextColor, fontSize: 14.sp)), const SizedBox(height: 4),
         TextFormField(
             controller: controller,
-            minLines: minLines, maxLines: minLines > 1 ? minLines + 2 : 1,
+            minLines: minLines, 
+            maxLines: maxLines ?? (minLines > 1 ? minLines + 2 : 1),
             style: TextStyle(fontWeight: FontWeight.w500, color: KTextColor, fontSize: 12.sp),
             textAlign: currentLocale == 'ar' ? TextAlign.right : TextAlign.left,
             keyboardType: isNumber ? TextInputType.number : TextInputType.text,
@@ -562,8 +730,8 @@ class _CarServicesAdScreenState extends State<CarServicesAdScreen> {
                    SizedBox(width: 10),
                    Expanded(
                     child: ElevatedButton.icon(
-                      icon: const Icon(Icons.map_outlined, color: Colors.white, size: 20),
-                      label: const Text('Pick Location', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w500, fontSize: 12)),
+                      icon: const Icon(Icons.location_on_outlined, color: Colors.white, size: 20),
+                      label: const Text('open Google map', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w500, fontSize: 12)),
                       onPressed: _navigateToLocationPicker,
                        style: ElevatedButton.styleFrom(backgroundColor: Color(0xFF01547E), minimumSize: const Size(0, 48), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
                     ),
@@ -592,12 +760,17 @@ class TitledSelectOrAddField extends StatelessWidget {
   Widget build(BuildContext context) {
     final s = S.of(context);
     final borderColor = Color.fromRGBO(8, 194, 201, 1);
+    
+    // طباعة البيانات للتحقق
+    print('TitledSelectOrAddField - Title: $title, Items count: ${items.length}, Items: $items');
+    
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(title, style: TextStyle(fontWeight: FontWeight.w600, color: KTextColor, fontSize: 14.sp)), const SizedBox(height: 4),
         GestureDetector(
           onTap: () async {
+            print('Opening bottom sheet for $title with ${items.length} items');
             final result = await showModalBottomSheet<String>(
               context: context, backgroundColor: Colors.white, isScrollControlled: true, shape: RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
               builder: (_) => _SearchableSelectOrAddBottomSheet(title: title, items: items, isNumeric: isNumeric, onAddNew: onAddNew),
@@ -631,6 +804,9 @@ class _SearchableSelectOrAddBottomSheetState extends State<_SearchableSelectOrAd
     super.initState();
     _filteredItems = List.from(widget.items);
     _searchController.addListener(_filterItems);
+    
+    // طباعة البيانات في البداية
+    print('_SearchableSelectOrAddBottomSheet initState - Title: ${widget.title}, Items: ${widget.items}');
   }
   @override
   void dispose() { _searchController.dispose(); _addController.dispose(); super.dispose(); }

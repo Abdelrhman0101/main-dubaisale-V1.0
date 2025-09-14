@@ -29,7 +29,7 @@ class CarSalesAdScreen extends StatefulWidget {
   final double? initialLatitude;
   final double? initialLongitude;
   const CarSalesAdScreen({
-    Key? key, 
+    Key? key,
     required this.onLanguageChange,
     this.initialLocation,
     this.initialLatitude,
@@ -55,7 +55,7 @@ class _CarSalesAdScreenState extends State<CarSalesAdScreen> {
     if (widget.initialLocation != null) {
       selectedLocation = widget.initialLocation!;
     }
-    
+
     // جلب بيانات المواصفات والماركات والموديلات من API عند تحميل الشاشة
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       final infoProvider = context.read<CarSalesInfoProvider>();
@@ -87,7 +87,7 @@ class _CarSalesAdScreenState extends State<CarSalesAdScreen> {
 
       // التحقق من بيانات البروفايل
       await _checkUserProfileData(authProvider);
-      
+
       // تحميل الموقع المحفوظ من FlutterSecureStorage
       await _loadSavedLocation();
     });
@@ -103,6 +103,13 @@ class _CarSalesAdScreenState extends State<CarSalesAdScreen> {
     final user = authProvider.user;
     if (user == null) return;
 
+    // تعيين موقع المستخدم المحفوظ إذا كان متوفراً وغير فارغ
+    if (user.advertiserLocation != null && user.advertiserLocation!.trim().isNotEmpty) {
+      setState(() {
+        selectedLocation = user.advertiserLocation!;
+      });
+    }
+
     List<String> missingFields = [];
 
     // التحقق من الحقول المطلوبة
@@ -110,14 +117,14 @@ class _CarSalesAdScreenState extends State<CarSalesAdScreen> {
     //   missingFields.add('اسم المعلن');
     // }
     if (user.phone.trim().isEmpty) {
-      missingFields.add('رقم الهاتف');
+      missingFields.add('phone number');
     }
     // if (user.whatsapp == null || user.whatsapp!.trim().isEmpty) {
     //   missingFields.add('رقم الواتساب');
     // }
-    if ((user.address == null || user.address!.trim().isEmpty) &&
+    if ((user.advertiserLocation == null || user.advertiserLocation!.trim().isEmpty) &&
         (user.latitude == null || user.longitude == null)) {
-      missingFields.add('الموقع');
+      missingFields.add('your location');
     }
 
     // إظهار التنبيه إذا كانت هناك حقول ناقصة
@@ -126,7 +133,7 @@ class _CarSalesAdScreenState extends State<CarSalesAdScreen> {
     }
   }
 
- // دالة لإظهار تنبيه البيانات الناقصة
+  // دالة لإظهار تنبيه البيانات الناقصة
   void _showProfileIncompleteDialog(List<String> missingFields) {
     showDialog(
       context: context,
@@ -145,10 +152,10 @@ class _CarSalesAdScreenState extends State<CarSalesAdScreen> {
               borderRadius: BorderRadius.circular(16),
             ),
             title: const Text(
-              'بيانات البروفايل ناقصة',
+              "Incomplete profile",
               style: TextStyle(
                 fontWeight: FontWeight.bold,
-                color: Color(0xFF01547E),
+                color: KTextColor,
                 fontSize: 18,
               ),
             ),
@@ -157,10 +164,10 @@ class _CarSalesAdScreenState extends State<CarSalesAdScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
-                  'يجب استكمال الحقول التالية في ملف التعريف الخاص بك قبل إضافة الإعلان:',
+                  'You must complete the following fields in your profile before adding the advertisement:',
                   style: TextStyle(
                     fontSize: 16,
-                    color: Color(0xFF333333),
+                    color: KTextColor,
                   ),
                 ),
                 const SizedBox(height: 15),
@@ -196,14 +203,11 @@ class _CarSalesAdScreenState extends State<CarSalesAdScreen> {
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: () {
-                   context.push('/editprofile');
-
+                    context.push('/editprofile');
                     Navigator.of(context).pop();
-                    // الانتقال إلى صفحة تعديل البروفايل
-                    // Navigator.of(context).pushNamed('/editprofile');
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color.fromRGBO(8, 194, 201, 1),
+                    backgroundColor: Color.fromRGBO(1, 84, 126, 1),
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     shape: RoundedRectangleBorder(
@@ -249,12 +253,14 @@ class _CarSalesAdScreenState extends State<CarSalesAdScreen> {
   // دالة حفظ الموقع في FlutterSecureStorage
   Future<void> _saveLocationToStorage() async {
     if (selectedLatLng == null || selectedLocation.isEmpty) return;
-    
+
     try {
-      await _storage.write(key: 'saved_latitude', value: selectedLatLng!.latitude.toString());
-      await _storage.write(key: 'saved_longitude', value: selectedLatLng!.longitude.toString());
+      await _storage.write(
+          key: 'saved_latitude', value: selectedLatLng!.latitude.toString());
+      await _storage.write(
+          key: 'saved_longitude', value: selectedLatLng!.longitude.toString());
       await _storage.write(key: 'saved_address', value: selectedLocation);
-      
+
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('تم حفظ الموقع بنجاح'),
@@ -277,13 +283,14 @@ class _CarSalesAdScreenState extends State<CarSalesAdScreen> {
       final savedLat = await _storage.read(key: 'saved_latitude');
       final savedLng = await _storage.read(key: 'saved_longitude');
       final savedAddress = await _storage.read(key: 'saved_address');
-      
+
       if (savedLat != null && savedLng != null && savedAddress != null) {
         setState(() {
-          selectedLatLng = LatLng(double.parse(savedLat), double.parse(savedLng));
+          selectedLatLng =
+              LatLng(double.parse(savedLat), double.parse(savedLng));
           selectedLocation = savedAddress;
         });
-        
+
         // تحريك الكاميرا إلى الموقع المحفوظ
         final googleMapsProvider = context.read<GoogleMapsProvider>();
         await googleMapsProvider.moveCameraToLocation(
@@ -303,7 +310,7 @@ class _CarSalesAdScreenState extends State<CarSalesAdScreen> {
     setState(() {
       _isLoadingLocation = true;
     });
-    
+
     try {
       // إظهار مؤشر التحميل
       ScaffoldMessenger.of(context).showSnackBar(
@@ -320,8 +327,8 @@ class _CarSalesAdScreenState extends State<CarSalesAdScreen> {
       if (mapsProvider.currentLocationData != null) {
         final locationData = mapsProvider.currentLocationData!;
         setState(() {
-          selectedLatLng = LatLng(
-              locationData.latitude!, locationData.longitude!);
+          selectedLatLng =
+              LatLng(locationData.latitude!, locationData.longitude!);
         });
 
         // تحريك الكاميرا إلى الموقع الحالي مع تكبير أكبر
@@ -330,9 +337,8 @@ class _CarSalesAdScreenState extends State<CarSalesAdScreen> {
             zoom: 16.0);
 
         // تحويل الإحداثيات إلى عنوان
-        final address =
-            await mapsProvider.getAddressFromCoordinates(
-                locationData.latitude!, locationData.longitude!);
+        final address = await mapsProvider.getAddressFromCoordinates(
+            locationData.latitude!, locationData.longitude!);
         if (address != null) {
           setState(() {
             selectedLocation = address;
@@ -374,11 +380,12 @@ class _CarSalesAdScreenState extends State<CarSalesAdScreen> {
       // استخدام الموقع الحالي إذا كان متوفراً، وإلا استخدام إحداثيات دبي
       double lat = selectedLatLng?.latitude ?? 25.2048;
       double lng = selectedLatLng?.longitude ?? 55.2708;
-      
+
       // إنشاء رابط Google Maps
-      final String googleMapsUrl = 'https://www.google.com/maps/search/?api=1&query=$lat,$lng';
+      final String googleMapsUrl =
+          'https://www.google.com/maps/search/?api=1&query=$lat,$lng';
       final Uri url = Uri.parse(googleMapsUrl);
-      
+
       // محاولة فتح Google Maps
       if (await canLaunchUrl(url)) {
         await launchUrl(url, mode: LaunchMode.externalApplication);
@@ -388,7 +395,7 @@ class _CarSalesAdScreenState extends State<CarSalesAdScreen> {
         final Uri webUri = Uri.parse(webUrl);
         await launchUrl(webUri, mode: LaunchMode.externalApplication);
       }
-      
+
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('جاري فتح Google Maps...'),
@@ -411,8 +418,9 @@ class _CarSalesAdScreenState extends State<CarSalesAdScreen> {
       // تحضير الموقع والعنوان الأولي للمنتقي
       double? initialLat = selectedLatLng?.latitude;
       double? initialLng = selectedLatLng?.longitude;
-      String? initialAddress = selectedLocation.isNotEmpty ? selectedLocation : null;
-      
+      String? initialAddress =
+          selectedLocation.isNotEmpty ? selectedLocation : null;
+
       // بناء المسار مع معاملات الاستعلام
       String route = '/location_picker';
       if (initialLat != null && initialLng != null) {
@@ -421,15 +429,15 @@ class _CarSalesAdScreenState extends State<CarSalesAdScreen> {
           route += '&address=${Uri.encodeComponent(initialAddress)}';
         }
       }
-      
+
       // الانتقال إلى منتقي الموقع وانتظار النتيجة
       final result = await context.push(route);
-      
+
       // التعامل مع بيانات الموقع المُرجعة
       if (result != null && result is Map<String, dynamic>) {
         final LatLng? location = result['location'] as LatLng?;
         final String? address = result['address'] as String?;
-        
+
         if (location != null) {
           setState(() {
             selectedLatLng = location;
@@ -437,10 +445,10 @@ class _CarSalesAdScreenState extends State<CarSalesAdScreen> {
               selectedLocation = address;
             }
           });
-          
+
           // حفظ بيانات الموقع الجديدة
           await _saveLocationToStorage();
-          
+
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('تم تحديث الموقع بنجاح'),
@@ -598,18 +606,17 @@ class _CarSalesAdScreenState extends State<CarSalesAdScreen> {
       'phoneNumber': formattedPhone,
       'whatsapp': formattedWhatsApp,
       'emirate': selectedEmirate!,
-      'area': selectedLocation.isNotEmpty ? selectedLocation : _areaController.text,
+      'area':
+          selectedLocation.isNotEmpty ? selectedLocation : _areaController.text,
       'advertiserType': selectedAdvertiserType!,
       'mainImage': _mainImage!,
       'thumbnailImages': _thumbnailImages,
-      'latitude': selectedLatLng?.latitude,
-      'longitude': selectedLatLng?.longitude,
-      'location': selectedLocation,
+      'advertiser_location': selectedLocation,
     };
 
     // الانتقال إلى صفحة اختيار نوع الإعلان مع تمرير البيانات
     final result = await context.push('/placeAnAd', extra: adData);
-    
+
     // إذا تم إرجاع نتيجة من صفحة place_an_ad، يمكن التعامل معها هنا
     if (result != null && result == 'success') {
       // العودة إلى الصفحة الرئيسية أو إظهار رسالة نجاح
@@ -659,7 +666,8 @@ class _CarSalesAdScreenState extends State<CarSalesAdScreen> {
       thumbnailImages: adData['thumbnailImages'],
       planType: adData['planType'] ?? 'free',
       planDays: adData['planDays'] ?? 30,
-      planExpiresAt: adData['planExpiresAt'] ?? DateTime.now().add(Duration(days: 30)).toIso8601String(),
+      planExpiresAt: adData['planExpiresAt'] ??
+          DateTime.now().add(Duration(days: 30)).toIso8601String(),
     );
 
     return success;
@@ -813,11 +821,8 @@ class _CarSalesAdScreenState extends State<CarSalesAdScreen> {
                       _buildFormRow([
                         Consumer<CarSalesInfoProvider>(
                             builder: (context, infoProvider, child) =>
-                                _buildTitledTextFormFieldWithValidation(
-                                    s.year,
-                                    _yearController,
-                                    borderColor,
-                                    currentLocale,
+                                _buildTitledTextFormFieldWithValidation(s.year,
+                                    _yearController, borderColor, currentLocale,
                                     isNumber: true,
                                     hintText: "2020", validator: (value) {
                                   if (value == null || value.isEmpty) {
@@ -1087,10 +1092,11 @@ class _CarSalesAdScreenState extends State<CarSalesAdScreen> {
                                 width: 20.w, height: 20.h),
                             SizedBox(width: 8.w),
                             Expanded(
-                                child: Text(selectedLocation,
+                                child: 
+                                Text(selectedLocation.isEmpty ? 'يرجى تحديد الموقع' : selectedLocation,
                                     style: TextStyle(
                                         fontSize: 14.sp,
-                                        color: KTextColor,
+                                        color: selectedLocation.isEmpty ? Colors.red : KTextColor,
                                         fontWeight: FontWeight.w500)))
                           ])),
                       SizedBox(height: 8.h),
@@ -1417,7 +1423,8 @@ class _CarSalesAdScreenState extends State<CarSalesAdScreen> {
                               height: 20,
                               child: CircularProgressIndicator(
                                 strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                valueColor:
+                                    AlwaysStoppedAnimation<Color>(Colors.white),
                               ),
                             )
                           : const Icon(Icons.my_location,
@@ -1427,9 +1434,11 @@ class _CarSalesAdScreenState extends State<CarSalesAdScreen> {
                               color: Colors.white,
                               fontWeight: FontWeight.w500,
                               fontSize: 14)),
-                      onPressed: _isLoadingLocation ? null : _getCurrentLocation,
+                      onPressed:
+                          _isLoadingLocation ? null : _getCurrentLocation,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: _isLoadingLocation ? Colors.grey : KPrimaryColor,
+                        backgroundColor:
+                            _isLoadingLocation ? Colors.grey : KPrimaryColor,
                         minimumSize: const Size(0, 48),
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(8)),

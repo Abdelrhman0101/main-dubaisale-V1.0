@@ -87,6 +87,7 @@ class AuthRepository {
     double? latitude,
     double? longitude,
     String? address,
+    String? advertiserLocation,
   }) async {
     final Map<String, dynamic> data = {
       'username': username,
@@ -100,6 +101,11 @@ class AuthRepository {
       'longitude': longitude,
       'address': address,
     };
+    
+    // إضافة advertiser_location إذا كان متوفراً
+    if (advertiserLocation != null) {
+      data['advertiser_location'] = advertiserLocation;
+    }
 
     final response = await _apiService.post(
       '/api/profile',
@@ -119,7 +125,7 @@ class AuthRepository {
     required String logoPath,
   }) async {
     final response = await _apiService.uploadFile(
-      '/api/profile/logo',
+      '/api/profile',
       filePath: logoPath,
       fieldName: 'advertiser_logo',
       token: token,

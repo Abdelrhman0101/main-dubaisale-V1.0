@@ -47,6 +47,9 @@
   "placeName": "منارة موتورز",
   
   "back":"رجوع",
+  "please_select_emirate":"يرجى اختيار الإمارة",
+  "please_select_district":"يرجى اختيار المنطقة",
+  "please_select_category":"يرجى اختيار الفئة",
 
   "forgetyourpass":"نسيت كلمة المرور؟",
   "enterphone":"ادخل رقم الهاتف",

@@ -480,6 +480,7 @@ class _CarSalesScreenState extends State<CarSalesScreen> with AutomaticKeepAlive
 // }
 
 class AdCardItemAdapter implements FavoriteItemInterface {
+  String get id => (_ad.id ?? '').toString();
   final CarAdModel _ad;
   AdCardItemAdapter(this._ad);
   @override String get contact => _ad.advertiserName;

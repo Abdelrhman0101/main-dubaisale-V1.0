@@ -34,5 +34,9 @@ class ElectronicModel implements FavoriteItemInterface {
 
 
 @override
-  List<String> get images => _images; 
+  List<String> get images => _images;
+  
+  @override
+  // TODO: implement id
+  get id => throw UnimplementedError(); 
 }
