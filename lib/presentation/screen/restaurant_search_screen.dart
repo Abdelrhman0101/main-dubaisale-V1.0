@@ -1,18 +1,22 @@
 import 'dart:math';
 
-import 'package:advertising_app/data/restaurant_data_dummy.dart';
+import 'package:advertising_app/constant/string.dart';
+import 'package:advertising_app/constant/image_url_helper.dart';
 import 'package:advertising_app/generated/l10n.dart';
-import 'package:advertising_app/data/model/ad_priority.dart';
 import 'package:advertising_app/data/model/favorite_item_interface_model.dart';
+import 'package:advertising_app/data/model/ad_priority.dart';
 import 'package:advertising_app/presentation/widget/custom_search_card.dart';
 import 'package:advertising_app/presentation/providers/restaurant_ad_provider.dart';
 import 'package:advertising_app/presentation/providers/restaurants_info_provider.dart';
+import 'package:advertising_app/utils/phone_number_formatter.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 
 // تعريف الثوابت المستخدمة في الألوان
@@ -493,13 +497,77 @@ class _RestaurantSearchScreenState extends State<RestaurantSearchScreen>
       child: Directionality(
         textDirection: TextDirection.ltr,
         child: SearchCard(
-          showLine1: false, item: item, showDelete: false, onAddToFavorite: () {},
+          showLine1: false, 
+          item: item, 
+          showDelete: false, 
+          onAddToFavorite: () {
+            // زر المفضلة بدون وظيفة حالياً
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('تم إضافة الإعلان للمفضلة')),
+            );
+          },
           onDelete: () { 
             // يمكن إضافة منطق حذف من API هنا إذا لزم الأمر
           },
+          // تمرير الأزرار المخصصة مع الوظائف
+          customActionButtons: [
+            _buildActionIcon(Icons.phone, onTap: () {
+              final phoneNumber = item.contact;
+              if (phoneNumber.isNotEmpty) {
+                final telUrl = PhoneNumberFormatter.getTelUrl(phoneNumber);
+                _launchUrl(telUrl);
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('رقم الهاتف غير متوفر')),
+                );
+              }
+            }),
+            const SizedBox(width: 5),
+            _buildActionIcon(FontAwesomeIcons.whatsapp, onTap: () {
+              final phoneNumber = item.contact;
+              if (phoneNumber.isNotEmpty) {
+                final whatsappUrl = PhoneNumberFormatter.getWhatsAppUrl(phoneNumber);
+                _launchUrl(whatsappUrl);
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('رقم الهاتف غير متوفر')),
+                );
+              }
+            }),
+          ],
         ),
       ),
     );
+  }
+
+  Widget _buildActionIcon(IconData icon, {required VoidCallback onTap}) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        height: 35.h,
+        width: 62.w,
+        decoration: BoxDecoration(
+          color: const Color(0xFF01547E),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Center(
+          child: Icon(icon, color: Colors.white, size: 22),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _launchUrl(String url) async {
+    final uri = Uri.parse(url);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri);
+    } else {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('لا يمكن فتح الرابط: $url')),
+        );
+      }
+    }
   }
 }
 

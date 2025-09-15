@@ -627,17 +627,20 @@ class __AdCardWidgetState extends State<_AdCardWidget> {
                           return;
                         }
 
-                        final categorySlug = ad.categorySlug.isNotEmpty
-                            ? ad.categorySlug
-                            : ad.category.toLowerCase().replaceAll(' ', '-');
+                        // استخدام categorySlug من الخادم مباشرة
+                        String categorySlug = ad.categorySlug.isNotEmpty 
+                            ? ad.categorySlug 
+                            : 'car_sales'; // قيمة افتراضية في حالة عدم وجود categorySlug
 
                         print('=== BUTTON CLICK DEBUG ===');
                         print('Ad ID: ${ad.id}');
                         print('Ad Category: ${ad.category}');
-                        print('Ad CategorySlug: ${ad.categorySlug}');
-                        print('Final CategorySlug: $categorySlug');
+                        print('Ad CategorySlug from API: "${ad.categorySlug}"');
+                        print('CategorySlug isEmpty: ${ad.categorySlug.isEmpty}');
+                        print('Final CategorySlug: "$categorySlug"');
                         print('Days: $days');
                         print('Ad Status: ${ad.status}');
+                        print('Valid category slugs: car_sales, car_services, restaurant');
                         print('========================');
 
                         context

@@ -1,4 +1,5 @@
 import 'package:advertising_app/constant/string.dart';
+import 'package:advertising_app/constant/image_url_helper.dart';
 import 'package:advertising_app/generated/l10n.dart';
 import 'package:advertising_app/data/model/ad_priority.dart';
 import 'package:advertising_app/data/model/favorite_item_interface_model.dart';
@@ -49,10 +50,13 @@ class _SearchCardState extends State<SearchCard> {
   }
 
   Widget _buildImageWidget(String imagePath) {
-    // Check if it's a network URL or local asset
+    // استخدام ImageUrlHelper لمعالجة مسارات الصور
+    final processedUrl = ImageUrlHelper.getFullImageUrl(imagePath);
+    
+    // التحقق من نوع الصورة (إذا كان يحتوي على http أو https فهو من الشبكة)
     if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
       return CachedNetworkImage(
-        imageUrl: imagePath,
+        imageUrl: processedUrl,
         fit: BoxFit.cover,
         width: double.infinity,
         placeholder: (context, url) => Container(
@@ -60,9 +64,9 @@ class _SearchCardState extends State<SearchCard> {
           child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
         ),
         errorWidget: (context, url, error) {
-          // طباعة الخطأ في الـ debugging بدلاً من عرض صورة افتراضية
-          debugPrint('خطأ في تحميل الصورة من API: $error');
-          debugPrint('مسار الصورة: $url');
+          debugPrint('خطأ في تحميل الصورة من الشبكة: $error');
+          debugPrint('الرابط الأصلي: $imagePath');
+          debugPrint('الرابط المعالج: $processedUrl');
           return Container(
             color: Colors.grey[300],
             child: const Center(
@@ -76,15 +80,14 @@ class _SearchCardState extends State<SearchCard> {
         },
       );
     } else {
-      // Local asset
+      // صورة محلية
       return Image.asset(
-        imagePath,
+        processedUrl,
         fit: BoxFit.cover,
         width: double.infinity,
         errorBuilder: (context, error, stackTrace) {
-          // طباعة الخطأ في الـ debugging بدلاً من عرض صورة افتراضية
           debugPrint('خطأ في تحميل الصورة المحلية: $error');
-          debugPrint('مسار الصورة: $imagePath');
+          debugPrint('مسار الصورة: $processedUrl');
           return Container(
             color: Colors.grey[300],
             child: const Center(

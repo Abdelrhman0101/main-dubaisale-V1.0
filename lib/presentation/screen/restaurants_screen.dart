@@ -239,7 +239,7 @@ class _RestaurantsScreenState extends State<RestaurantsScreen> {
                             if (_selectedEmirate == null) {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
-                                  content: Text("please_select_emirate"),
+                                  content: Text("Please Select Emirate."),
                                   backgroundColor: Colors.red,
                                 ),
                               );
@@ -249,7 +249,7 @@ class _RestaurantsScreenState extends State<RestaurantsScreen> {
                             if (_selectedDistrict == null) {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
-                                  content: Text("please_select_district"),
+                                  content: Text("Please Select District."),
                                   backgroundColor: Colors.red,
                                 ),
                               );
@@ -259,7 +259,7 @@ class _RestaurantsScreenState extends State<RestaurantsScreen> {
                             if (_selectedCategory == null) {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
-                                  content: Text("please_select_category"),
+                                  content: Text("Please Select Category."),
                                   backgroundColor: Colors.red,
                                 ),
                               );

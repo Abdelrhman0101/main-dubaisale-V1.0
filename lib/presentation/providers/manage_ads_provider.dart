@@ -215,9 +215,27 @@ class MyAdsProvider with ChangeNotifier {
       return true;
 
     } catch (e) {
-      _activationError = e.toString();
+      // معالجة أفضل لرسائل الخطأ
+      String errorMessage = e.toString();
+      
+      // إذا كان الخطأ يحتوي على معلومات عن category_slug غير صحيح
+      if (errorMessage.contains('category_slug') || errorMessage.contains('invalid')) {
+        _activationError = 'فئة الإعلان غير صحيحة. يرجى المحاولة مرة أخرى.';
+      } else if (errorMessage.contains('full') || errorMessage.contains('max')) {
+        _activationError = 'صندوق العروض ممتلئ حالياً. يرجى المحاولة لاحقاً.';
+      } else if (errorMessage.contains('already')) {
+        _activationError = 'هذا الإعلان موجود بالفعل في صندوق العروض.';
+      } else if (errorMessage.contains('Unauthorized') || errorMessage.contains('403')) {
+        _activationError = 'ليس لديك صلاحية لتفعيل هذا الإعلان.';
+      } else if (errorMessage.contains('not found') || errorMessage.contains('404')) {
+        _activationError = 'الإعلان غير موجود.';
+      } else {
+        _activationError = 'حدث خطأ أثناء تفعيل الإعلان. يرجى المحاولة مرة أخرى.';
+      }
+      
       print('=== OFFER ACTIVATION ERROR ===');
-      print('Error: $e');
+      print('Original Error: $e');
+      print('User-friendly Error: $_activationError');
       print('=============================');
       return false;
     } finally {

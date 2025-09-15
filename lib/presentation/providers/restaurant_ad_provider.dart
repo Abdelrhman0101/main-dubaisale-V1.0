@@ -68,8 +68,47 @@ class RestaurantAdProvider with ChangeNotifier {
       
       _rawRestaurantData = restaurants;
       
+      // Debug: طباعة بيانات المطاعم الخام
+      print('=== DEBUG: بيانات المطاعم الخام ===');
+      print('عدد المطاعم المستلمة: ${restaurants.length}');
+      for (int i = 0; i < restaurants.length && i < 3; i++) {
+        final restaurant = restaurants[i];
+        print('--- مطعم ${i + 1} ---');
+        print('ID: ${restaurant['id']}');
+        print('Title: ${restaurant['title']}');
+        print('Main Image: ${restaurant['main_image']}');
+        print('Emirate: ${restaurant['emirate']}');
+        print('District: ${restaurant['district']}');
+        print('Category: ${restaurant['category']}');
+        print('Price Range: ${restaurant['price_range']}');
+        print('Phone: ${restaurant['phone_number']}');
+        print('Plan Type: ${restaurant['plan_type']}');
+        print('Status: ${restaurant['add_status']}');
+        print('Created At: ${restaurant['created_at']}');
+        print('Raw Data: $restaurant');
+        print('---');
+      }
+      print('=== نهاية DEBUG ===');
+      
       // تحويل البيانات إلى FavoriteItemInterface
       _restaurantAds = _convertApiDataToFavoriteItems(restaurants);
+      
+      // Debug: طباعة البيانات المحولة
+      print('=== DEBUG: البيانات المحولة ===');
+      print('عدد المطاعم المحولة: ${_restaurantAds.length}');
+      for (int i = 0; i < _restaurantAds.length && i < 3; i++) {
+        final item = _restaurantAds[i];
+        print('--- مطعم محول ${i + 1} ---');
+        print('Title: ${item.title}');
+        print('Images: ${item.images}');
+        print('Location: ${item.location}');
+        print('Price: ${item.price}');
+        print('Details: ${item.details}');
+        print('Contact: ${item.contact}');
+        print('Is Premium: ${item.isPremium}');
+        print('---');
+      }
+      print('=== نهاية DEBUG المحولة ===');
       
     } catch (e) {
       _loadAdsError = e.toString();
@@ -82,7 +121,7 @@ class RestaurantAdProvider with ChangeNotifier {
   
   // --- تحويل البيانات من API إلى FavoriteItemInterface ---
   List<FavoriteItemInterface> _convertApiDataToFavoriteItems(List<dynamic> apiData) {
-    const String baseUrl = 'https://dubaisale.ae/storage/';
+    const String baseUrl = 'https://dubaisale.app/storage/';
     
     return apiData.map((restaurant) {
       final planType = _nullToString(restaurant['plan_type']);
