@@ -141,8 +141,10 @@ class AuthRepository {
     required String token,
   }) async {
     final response = await _apiService.post(
-      '/api/profile/logo/delete',
-      data: {},
+      '/api/profile',
+      data: {
+        'advertiser_logo': null,
+      },
       token: token,
     );
 

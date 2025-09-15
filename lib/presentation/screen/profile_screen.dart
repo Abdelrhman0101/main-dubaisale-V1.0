@@ -231,47 +231,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
-  // Logo upload methods - COMMENTED OUT FOR DEBUGGING
-  
-  // Future<void> _pickLogoImage() async {
-  //   final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
-  //   if (pickedFile != null) {
-  //     setState(() {
-  //       _logoImageFile = File(pickedFile.path);
-  //     });
-      
-  //     final authProvider = context.read<AuthProvider>();
-  //     final success = await authProvider.uploadLogo(pickedFile.path);
-      
-  //     if (success) {
-  //       ScaffoldMessenger.of(context).showSnackBar(
-  //         const SnackBar(content: Text('Logo uploaded successfully!'), backgroundColor: Colors.green),
-  //       );
-  //     } else {
-  //       ScaffoldMessenger.of(context).showSnackBar(
-  //         SnackBar(content: Text(authProvider.updateError ?? 'Failed to upload logo'), backgroundColor: Colors.red),
-  //       );
-  //     }
-  //   }
-  // }
 
-  // Future<void> _deleteLogoImage() async {
-  //   final authProvider = context.read<AuthProvider>();
-    
-  //   final success = await authProvider.deleteLogo();
-  //   if (success) {
-  //     setState(() {
-  //       _logoImageFile = null;
-  //     });
-  //     ScaffoldMessenger.of(context).showSnackBar(
-  //       const SnackBar(content: Text('Logo deleted successfully!'), backgroundColor: Colors.green),
-  //     );
-  //   } else {
-  //     ScaffoldMessenger.of(context).showSnackBar(
-  //       SnackBar(content: Text(authProvider.updateError ?? 'Failed to delete logo'), backgroundColor: Colors.red),
-  //     );
-  //   }
-  // }
   
 
   // Helper method to extract phone number without country code
