@@ -9,6 +9,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 import 'package:readmore/readmore.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 class CarServiceDetails extends StatefulWidget {
   final CarServiceModel car_service;
@@ -67,11 +68,14 @@ class _CarServiceDetailsState extends State<CarServiceDetails> {
                               itemCount: car_service.thumbnailImages.length,
                               onPageChanged: (index) =>
                                   setState(() => _currentPage = index),
-                              itemBuilder: (context, index) => Image.network(
-                                ImageUrlHelper.getFullImageUrl(car_service.thumbnailImages[index]),
+                              itemBuilder: (context, index) => CachedNetworkImage(
+                                imageUrl: ImageUrlHelper.getFullImageUrl(car_service.thumbnailImages[index]),
                                 fit: BoxFit.cover,
                                 width: double.infinity,
-                                errorBuilder: (context, error, stackTrace) {
+                                placeholder: (context, url) => Center(
+                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                ),
+                                errorWidget: (context, url, error) {
                                   return Container(
                                     color: Colors.grey[300],
                                     child: const Icon(
@@ -81,42 +85,23 @@ class _CarServiceDetailsState extends State<CarServiceDetails> {
                                     ),
                                   );
                                 },
-                                loadingBuilder: (context, child, loadingProgress) {
-                                  if (loadingProgress == null) return child;
-                                  return Center(
-                                    child: CircularProgressIndicator(
-                                      value: loadingProgress.expectedTotalBytes != null
-                                          ? loadingProgress.cumulativeBytesLoaded /
-                                              loadingProgress.expectedTotalBytes!
-                                          : null,
-                                    ),
-                                  );
-                                },
                               )
                             )
                           : car_service.mainImage != null
-                              ? Image.network(
-                                  ImageUrlHelper.getFullImageUrl(car_service.mainImage!),
+                              ? CachedNetworkImage(
+                                  imageUrl: ImageUrlHelper.getFullImageUrl(car_service.mainImage!),
                                   fit: BoxFit.cover,
                                   width: double.infinity,
-                                  errorBuilder: (context, error, stackTrace) {
+                                  placeholder: (context, url) => Center(
+                                    child: CircularProgressIndicator(strokeWidth: 2),
+                                  ),
+                                  errorWidget: (context, url, error) {
                                     return Container(
                                       color: Colors.grey[300],
                                       child: const Icon(
                                         Icons.image_not_supported,
                                         size: 50,
                                         color: Colors.grey,
-                                      ),
-                                    );
-                                  },
-                                  loadingBuilder: (context, child, loadingProgress) {
-                                    if (loadingProgress == null) return child;
-                                    return Center(
-                                      child: CircularProgressIndicator(
-                                        value: loadingProgress.expectedTotalBytes != null
-                                            ? loadingProgress.cumulativeBytesLoaded /
-                                                loadingProgress.expectedTotalBytes!
-                                            : null,
                                       ),
                                     );
                                   },

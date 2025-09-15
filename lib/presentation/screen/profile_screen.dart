@@ -9,8 +9,10 @@ import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 import 'package:advertising_app/constant/string.dart';
+import 'package:advertising_app/constant/image_url_helper.dart';
 import 'package:advertising_app/generated/l10n.dart';
 import 'package:advertising_app/presentation/widget/custom_bottom_nav.dart';
 import 'package:advertising_app/presentation/widget/custom_phone_field.dart';
@@ -880,16 +882,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
             child: _logoImageFile != null
                 ? Image.file(_logoImageFile!, fit: BoxFit.cover)
                 : (user?.advertiserLogo != null && user!.advertiserLogo!.isNotEmpty
-                    ? Image.network(
-                        user.advertiserLogo!, 
-                        fit: BoxFit.cover, 
-                        errorBuilder: (context, error, stackTrace) {
-                          return const Center(child: Icon(Icons.broken_image, size: 50, color: Colors.grey));
-                        },
-                        loadingBuilder: (context, child, loadingProgress) {
-                          if (loadingProgress == null) return child;
-                          return const Center(child: CircularProgressIndicator());
-                        },
+                    ? CachedNetworkImage(
+                        imageUrl: ImageUrlHelper.getFullImageUrl(user.advertiserLogo!),
+                        fit: BoxFit.cover,
+                        placeholder: (context, url) => Container(
+                          color: Colors.grey[300],
+                          child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                        ),
+                        errorWidget: (context, url, error) => const Center(child: Icon(Icons.broken_image, size: 50, color: Colors.grey)),
                       )
                     : const Center(child: Icon(Icons.person, size: 50, color: Colors.grey))),
           ),

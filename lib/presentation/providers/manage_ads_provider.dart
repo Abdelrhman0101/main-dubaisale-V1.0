@@ -187,7 +187,17 @@ class MyAdsProvider with ChangeNotifier {
 
     try {
       final token = await const FlutterSecureStorage().read(key: 'auth_token');
-      if (token == null) throw Exception('Token not found');
+      if (token == null) {
+        _activationError = 'Authentication token not found. Please login again.';
+        return false;
+      }
+      
+      print('=== ACTIVATING OFFER DEBUG ===');
+      print('Ad ID: $adId');
+      print('Category Slug: $categorySlug');
+      print('Days: $days');
+      print('Token: ${token.substring(0, 20)}...');
+      print('=============================');
       
       await _myAdsRepository.activateOffer(
         token: token,
@@ -196,13 +206,19 @@ class MyAdsProvider with ChangeNotifier {
         days: days,
       );
       
+      print('=== OFFER ACTIVATION SUCCESS ===');
+      print('Ad $adId activated successfully');
+      print('===============================');
+      
       // بعد النجاح، يمكنك إعادة تحميل الإعلانات لتحديث حالتها
       await fetchMyAds();
       return true;
 
     } catch (e) {
       _activationError = e.toString();
-      if (kDebugMode) print("Error activating offer: $e");
+      print('=== OFFER ACTIVATION ERROR ===');
+      print('Error: $e');
+      print('=============================');
       return false;
     } finally {
       _isActivatingOffer = false;

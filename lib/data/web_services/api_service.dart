@@ -11,8 +11,9 @@ class ApiService {
     BaseOptions(
       baseUrl: baseUrl,
       receiveDataWhenStatusError: true,
-      connectTimeout: const Duration(milliseconds: 20000),
-      receiveTimeout: const Duration(milliseconds: 20000),
+      connectTimeout: const Duration(milliseconds: 15000), // تحسين من 20 إلى 15 ثانية
+      receiveTimeout: const Duration(milliseconds: 15000), // تحسين من 20 إلى 15 ثانية
+      sendTimeout: const Duration(milliseconds: 30000), // إضافة sendTimeout للرفع
       headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' }
     ),
   );
@@ -38,9 +39,28 @@ class ApiService {
     }
     
     try {
+      print('=== API SERVICE POST ===');
+      print('URL: $baseUrl$endpoint');
+      print('Data: $data');
+      print('Query: $query');
+      print('Headers: ${_dio.options.headers}');
+      print('=======================');
+
       final response = await _dio.post(endpoint, data: data, queryParameters: query);
+      
+      print('=== API RESPONSE ===');
+      print('Status Code: ${response.statusCode}');
+      print('Response Data: ${response.data}');
+      print('==================');
+      
       return response.data;
     } on DioException catch (e) {
+      print('=== API ERROR ===');
+      print('Error Type: ${e.type}');
+      print('Error Message: ${e.message}');
+      print('Response: ${e.response?.data}');
+      print('Status Code: ${e.response?.statusCode}');
+      print('================');
       throw ErrorHandler.handleDioError(e);
     }
   }

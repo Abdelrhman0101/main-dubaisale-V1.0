@@ -14,6 +14,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:advertising_app/constant/image_url_helper.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 
 // تعريف الثوابت المستخدمة في الألوان
@@ -188,7 +189,7 @@ class _CarServiceState extends State<CarService> {
                         width: 145,
                         decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(4.r), border: Border.all(color: Colors.grey.shade300), boxShadow: [BoxShadow(color: Colors.grey.withOpacity(0.15), blurRadius: 5.r, offset: Offset(0, 2.h))]),
                         child: Column(children: [
-                          ClipRRect(borderRadius: BorderRadius.circular(4.r), child: Image.network(ImageUrlHelper.getMainImageUrl(ad.mainImage ?? ''), height: 94.h, width: double.infinity, fit: BoxFit.cover, errorBuilder: (c, e, s) => Image.asset('assets/images/car.jpg', fit: BoxFit.cover))),
+                          ClipRRect(borderRadius: BorderRadius.circular(4.r), child: CachedNetworkImage(imageUrl: ImageUrlHelper.getMainImageUrl(ad.mainImage ?? ''), height: 94.h, width: double.infinity, fit: BoxFit.cover, placeholder: (context, url) => Container(color: Colors.grey[300], child: Center(child: CircularProgressIndicator(strokeWidth: 2))), errorWidget: (context, url, error) => Image.asset('assets/images/car.jpg', fit: BoxFit.cover))),
                           Expanded(child: Padding(
                               padding: const EdgeInsets.symmetric(horizontal: 6),
                               child: Column(

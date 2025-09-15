@@ -28,6 +28,17 @@ class _PlaceAnAdState extends State<PlaceAnAd> {
   void initState() {
     super.initState();
     _loadSettings();
+    
+    // طباعة البيانات المستلمة في Console
+    if (widget.adData != null) {
+      print('=== البيانات المستلمة في صفحة اختيار الخطة ===');
+      widget.adData!.forEach((key, value) {
+        print('$key: $value');
+      });
+      print('=======================================');
+    } else {
+      print('تحذير: لا توجد بيانات إعلان مرسلة!');
+    }
   }
 
   Future<void> _loadSettings() async {
@@ -84,7 +95,7 @@ class _PlaceAnAdState extends State<PlaceAnAd> {
           engineCapacity: widget.adData!['engineCapacity'], cylinders: widget.adData!['cylinders'], horsepower: widget.adData!['horsepower'],
           doorsNo: widget.adData!['doorsNo'], seatsNo: widget.adData!['seatsNo'], steeringSide: widget.adData!['steeringSide'],
           advertiserName: widget.adData!['advertiserName'], phoneNumber: widget.adData!['phoneNumber'], whatsapp: widget.adData!['whatsapp'],
-          emirate: widget.adData!['emirate'], area: widget.adData!['area'], advertiserType: widget.adData!['advertiverType'],
+          emirate: widget.adData!['emirate'], area: widget.adData!['area'], advertiserType: widget.adData!['advertiserType'],
           mainImage: widget.adData!['mainImage'], thumbnailImages: widget.adData!['thumbnailImages'],
           // تمرير بيانات الخطة
           planType: widget.adData!['planType'], planDays: widget.adData!['planDays'], planExpiresAt: widget.adData!['planExpiresAt'],

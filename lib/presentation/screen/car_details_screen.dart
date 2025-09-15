@@ -14,6 +14,7 @@ import 'package:advertising_app/generated/l10n.dart';
 import 'package:advertising_app/constant/string.dart';
 import 'package:advertising_app/constant/image_url_helper.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 class CarDetailsScreen extends StatefulWidget {
   // نستقبل الآن الـ ID فقط
@@ -179,16 +180,13 @@ class _CarDetailsScreenState extends State<CarDetailsScreen> {
                   controller: _pageController,
                   itemCount: images.length,
                   onPageChanged: (index) => setState(() => _currentPage = index),
-                  itemBuilder: (context, index) => Image.network(
-                    images[index],
+                  itemBuilder: (context, index) => CachedNetworkImage(
+                    imageUrl: images[index],
                     key: ValueKey(images[index]),
                     fit: BoxFit.cover,
                     width: double.infinity,
-                    loadingBuilder: (context, child, progress) {
-                      if (progress == null) return child;
-                      return const Center(child: CircularProgressIndicator());
-                    },
-                    errorBuilder: (c, e, s) => Icon(Icons.error, color: Colors.grey),
+                    placeholder: (context, url) => const Center(child: CircularProgressIndicator()),
+                    errorWidget: (context, url, error) => Icon(Icons.error, color: Colors.grey),
                   ),
                 ),
               ),

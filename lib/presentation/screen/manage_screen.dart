@@ -127,6 +127,7 @@ class _ManageScreenState extends State<ManageScreen> {
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       padding: EdgeInsets.zero, // إزالة المسافة الرأسية الافتراضية
+      cacheExtent: 500.0, // تحسين التخزين المؤقت
       itemBuilder: (context, index) {
         final ad = provider.displayedAds[index];
         return _AdCardWidget(key: ValueKey(ad.id), ad: ad);
@@ -318,11 +319,11 @@ class __AdCardWidgetState extends State<_AdCardWidget> {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           
                           children: [
-                        Text("${ad.make} ${ad.model} ${ad.trim} ",
+                        Text(_getAdTitle(ad),
                             maxLines: 3,
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
-                                fontSize: 16.sp,
+                                fontSize: 14.sp,
                                 fontWeight: FontWeight.w600,
                                 color: KTextColor)),
                         SizedBox(height: 25.h),
@@ -444,6 +445,36 @@ class __AdCardWidgetState extends State<_AdCardWidget> {
         return s.expired;
       default:
         return status;
+    }
+  }
+
+  String _getAdTitle(MyAdModel ad) {
+    switch (ad.category) {
+      case 'Cars Sales':
+        // للسيارات: استخدم Make Model Trim Year
+        List<String> carParts = [];
+        if (ad.make != null && ad.make!.isNotEmpty) carParts.add(ad.make!);
+        if (ad.model != null && ad.model!.isNotEmpty) carParts.add(ad.model!);
+        if (ad.trim != null && ad.trim!.isNotEmpty) carParts.add(ad.trim!);
+        if (ad.year != null && ad.year!.isNotEmpty) carParts.add(ad.year!);
+        return carParts.isNotEmpty ? carParts.join(' ') : ad.title;
+        
+      case 'Car Services':
+        // لخدمات السيارات: استخدم العنوان مع نوع الخدمة
+        if (ad.serviceType != null && ad.serviceType!.isNotEmpty) {
+          return '${ad.title} (${ad.serviceType})';
+        }
+        return ad.title;
+        
+      case 'Restaurants':
+        // للمطاعم: استخدم العنوان مع المنطقة
+        if (ad.area != null && ad.area!.isNotEmpty) {
+          return '${ad.title} - ${ad.area}';
+        }
+        return ad.title;
+        
+      default:
+        return ad.title;
     }
   }
 
@@ -600,6 +631,15 @@ class __AdCardWidgetState extends State<_AdCardWidget> {
                             ? ad.categorySlug
                             : ad.category.toLowerCase().replaceAll(' ', '-');
 
+                        print('=== BUTTON CLICK DEBUG ===');
+                        print('Ad ID: ${ad.id}');
+                        print('Ad Category: ${ad.category}');
+                        print('Ad CategorySlug: ${ad.categorySlug}');
+                        print('Final CategorySlug: $categorySlug');
+                        print('Days: $days');
+                        print('Ad Status: ${ad.status}');
+                        print('========================');
+
                         context
                             .read<MyAdsProvider>()
                             .activateOffer(
@@ -630,8 +670,31 @@ class __AdCardWidgetState extends State<_AdCardWidget> {
                                 ],
                               ),
                             );
+                          } else {
+                            // إظهار رسالة الخطأ
+                            final errorMessage = provider.activationError ?? 'Unknown error occurred';
+                            showDialog(
+                              context: context,
+                              builder: (context) => AlertDialog(
+                                title: Text(
+                                  "Error",
+                                  style: TextStyle(color: Colors.red),
+                                ),
+                                content: Text(
+                                  errorMessage,
+                                  style: TextStyle(color: Colors.red),
+                                ),
+                                actions: [
+                                  TextButton(
+                                      onPressed: () => Navigator.pop(context),
+                                      child: Text(
+                                        "OK",
+                                        style: TextStyle(color: Colors.red),
+                                      ))
+                                ],
+                              ),
+                            );
                           }
-                          // تم نقل رسالة الخطأ إلى الـ Provider
                         });
                       },
                 style: ElevatedButton.styleFrom(

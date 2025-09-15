@@ -12,6 +12,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 // تعريف الثوابت
 const Color KTextColor = Color.fromRGBO(0, 30, 91, 1);
@@ -377,12 +378,15 @@ class _HomeScreenState extends State<HomeScreen> {
                             Stack(children: [
                               ClipRRect(
                                   borderRadius: BorderRadius.circular(4.r),
-                                  child: Image.network(
-                                    car.mainImage,
+                                  child: CachedNetworkImage(
+                                    imageUrl: car.mainImage,
                                     height: (94).h,
                                     width: double.infinity,
                                     fit: BoxFit.cover,
-                                    errorBuilder: (c, e, s) => Image.asset(
+                                    placeholder: (context, url) => Container(
+                                        color: Colors.grey[300],
+                                        child: Center(child: CircularProgressIndicator(strokeWidth: 2))),
+                                    errorWidget: (context, url, error) => Image.asset(
                                         'assets/images/car.jpg',
                                         fit: BoxFit.cover),
                                   )),

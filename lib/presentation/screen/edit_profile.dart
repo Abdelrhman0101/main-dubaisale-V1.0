@@ -10,8 +10,10 @@ import 'package:provider/provider.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 import 'package:advertising_app/constant/string.dart';
+import 'package:advertising_app/constant/image_url_helper.dart';
 import 'package:advertising_app/generated/l10n.dart';
 import 'package:advertising_app/presentation/widget/custom_bottom_nav.dart';
 
@@ -138,9 +140,8 @@ class _EditProfileState extends State<EditProfile> {
       _advertiserNameController.text = user.advertiserName ?? '';
       _advertiserTypeController.text = user.advertiserType ?? '';
       _passwordController.text = "••••••••"; // Placeholder for password
-      if (user.advertiserLogo != null && user.advertiserLogo!.isNotEmpty) {
-        _logoImageFile = File(user.advertiserLogo!);
-      }
+      // advertiser_logo is a relative path from API, not a local file path
+      // _logoImageFile should only be set when user selects a new image
       
       // Update location data from user model if available
       if (user.latitude != null && user.longitude != null) {
@@ -779,9 +780,15 @@ class _EditProfileState extends State<EditProfile> {
             child: _logoImageFile != null
                 ? Image.file(_logoImageFile!, fit: BoxFit.cover)
                 : (user?.advertiserLogo != null && user!.advertiserLogo!.isNotEmpty
-                    ? Image.network(user.advertiserLogo!, fit: BoxFit.cover, errorBuilder: (context, error, stackTrace) {
-                        return const Center(child: Icon(Icons.broken_image, size: 50, color: Colors.grey));
-                      })
+                    ? CachedNetworkImage(
+                        imageUrl: ImageUrlHelper.getFullImageUrl(user.advertiserLogo!),
+                        fit: BoxFit.cover,
+                        placeholder: (context, url) => Container(
+                          color: Colors.grey[300],
+                          child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                        ),
+                        errorWidget: (context, url, error) => const Center(child: Icon(Icons.broken_image, size: 50, color: Colors.grey)),
+                      )
                     : const Center(child: Icon(Icons.person, size: 50, color: Colors.grey))),
           ),
           // A semi-transparent overlay to make buttons more visible

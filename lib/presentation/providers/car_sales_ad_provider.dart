@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:advertising_app/data/model/car_ad_model.dart';
 import 'package:advertising_app/data/model/car_sales_filter_options_model.dart';
@@ -89,8 +90,16 @@ class CarAdProvider with ChangeNotifier {
   
   bool _disposed = false;
   
+  // Debouncing for search
+  Timer? _searchDebounceTimer;
+  static const Duration _debounceDelay = Duration(milliseconds: 500);
+  
+  // Performance optimization
+  bool _isInitialized = false;
+  
   @override
   void dispose() {
+    _searchDebounceTimer?.cancel();
     _disposed = true;
     super.dispose();
   }
@@ -106,15 +115,47 @@ class CarAdProvider with ChangeNotifier {
     _carAds = sortedAds;
     safeNotifyListeners();
   }
-
+  
+  // Reset all states
+  void resetAllStates() {
+    _searchDebounceTimer?.cancel();
+    _isLoadingAds = false;
+    _loadAdsError = null;
+    _carAds.clear();
+    _allFetchedAds.clear();
+    _totalAds = 0;
+    _isInitialized = false;
+    safeNotifyListeners();
+  }
+  
+  // Check if provider is ready
+  bool get isInitialized => _isInitialized;
+  
+  // Batch update for better performance
+  void batchUpdate(Function() updates) {
+    updates();
+    safeNotifyListeners();
+  }
 
   // --- All Functions ---
 
   /// The main function to fetch ads.
+  // Debounced search function
+  void debouncedFetchCarAds({Map<String, String>? filters}) {
+    _searchDebounceTimer?.cancel();
+    _searchDebounceTimer = Timer(_debounceDelay, () {
+      fetchCarAds(filters: filters);
+    });
+  }
+  
   Future<void> fetchCarAds({Map<String, String>? filters}) async {
+    // Prevent multiple simultaneous requests
+    if (_isLoadingAds) return;
+    
     _isLoadingAds = true;
     _loadAdsError = null;
     safeNotifyListeners();
+    
     try {
       final token = await const FlutterSecureStorage().read(key: 'auth_token');
       if (token == null) throw Exception('User not authenticated.');
@@ -123,19 +164,28 @@ class CarAdProvider with ChangeNotifier {
       if (kDebugMode) print("==> FINAL QUERY TO API: $queryParameters");
       
       final response = await _carAdRepository.getCarAds(token: token, query: queryParameters);
-      _allFetchedAds = response.ads; // Store all fetched ads for local filtering
-      _totalAds = response.totalAds;
       
-      // Apply local filters on the fetched data
-      _performLocalFilter();
+      // Only update if not disposed
+      if (!_disposed) {
+        _allFetchedAds = response.ads; // Store all fetched ads for local filtering
+        _totalAds = response.totalAds;
+        
+        // Apply local filters on the fetched data
+        _performLocalFilter();
+        _isInitialized = true;
+      }
     } catch (e) {
-      _loadAdsError = e.toString();
-      _carAds = [];
-      _allFetchedAds = [];
-      if (kDebugMode) print("Error fetching car ads: $e");
+      if (!_disposed) {
+        _loadAdsError = e.toString();
+        _carAds = [];
+        _allFetchedAds = [];
+        if (kDebugMode) print("Error fetching car ads: $e");
+      }
     } finally {
-      _isLoadingAds = false;
-      safeNotifyListeners();
+      if (!_disposed) {
+        _isLoadingAds = false;
+        safeNotifyListeners();
+      }
     }
   }
   
@@ -293,29 +343,61 @@ class CarAdProvider with ChangeNotifier {
 
   // --- Other Functions ---
   Future<void> fetchAdDetails(int adId) async {
-    _isLoadingDetails = true; _detailsError = null; _adDetails = null; safeNotifyListeners();
+    // Prevent multiple simultaneous requests for the same ad
+    if (_isLoadingDetails) return;
+    
+    _isLoadingDetails = true;
+    _detailsError = null;
+    _adDetails = null;
+    safeNotifyListeners();
+    
     try {
       final token = await const FlutterSecureStorage().read(key: 'auth_token');
-      if(token == null) throw Exception("Token missing");
-      _adDetails = await _carAdRepository.getCarAdDetails(adId: adId, token: token);
-    } catch (e) { _detailsError = e.toString(); }
-    finally { 
-      _isLoadingDetails = false; 
-      safeNotifyListeners();
+      if (token == null) throw Exception("Token missing");
+      
+      final details = await _carAdRepository.getCarAdDetails(adId: adId, token: token);
+      
+      // Only update if not disposed
+      if (!_disposed) {
+        _adDetails = details;
+      }
+    } catch (e) {
+      if (!_disposed) {
+        _detailsError = e.toString();
+        if (kDebugMode) print("Error fetching ad details: $e");
+      }
+    } finally {
+      if (!_disposed) {
+        _isLoadingDetails = false;
+        safeNotifyListeners();
+      }
     }
   }
 
   Future<void> fetchMakes() async {
-    if (_makes.isNotEmpty) return;
-    _isLoadingMakes = true; notifyListeners();
+    // Return early if already loaded or currently loading
+    if (_makes.isNotEmpty || _isLoadingMakes) return;
+    
+    _isLoadingMakes = true;
+    safeNotifyListeners();
+    
     try {
-       final token = await const FlutterSecureStorage().read(key: 'auth_token');
-       if (token == null) throw Exception('Token not found');
-       _makes = await _carAdRepository.getMakes(token: token);
+      final token = await const FlutterSecureStorage().read(key: 'auth_token');
+      if (token == null) throw Exception('Token not found');
+      
+      final makes = await _carAdRepository.getMakes(token: token);
+      
+      // Only update if not disposed
+      if (!_disposed) {
+        _makes = makes;
+      }
     } catch (e) {
       if (kDebugMode) print("Error fetching makes: $e");
     } finally {
-      _isLoadingMakes = false; safeNotifyListeners();
+      if (!_disposed) {
+        _isLoadingMakes = false;
+        safeNotifyListeners();
+      }
     }
   }
 

@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 class SearchCard extends StatefulWidget {
   final FavoriteItemInterface item;
@@ -50,26 +51,18 @@ class _SearchCardState extends State<SearchCard> {
   Widget _buildImageWidget(String imagePath) {
     // Check if it's a network URL or local asset
     if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
-      return Image.network(
-        imagePath,
+      return CachedNetworkImage(
+        imageUrl: imagePath,
         fit: BoxFit.cover,
         width: double.infinity,
-        // إضافة معاملات لتعطيل الكاش وإجبار تحميل الصور الجديدة من API
-        cacheWidth: null,
-        cacheHeight: null,
-        headers: {
-          'Cache-Control': 'no-cache, no-store, must-revalidate',
-          'Pragma': 'no-cache',
-          'Expires': '0',
-        },
-        loadingBuilder: (context, child, loadingProgress) {
-          if (loadingProgress == null) return child;
-          return const Center(child: CircularProgressIndicator());
-        },
-        errorBuilder: (context, error, stackTrace) {
+        placeholder: (context, url) => Container(
+          color: Colors.grey[300],
+          child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+        ),
+        errorWidget: (context, url, error) {
           // طباعة الخطأ في الـ debugging بدلاً من عرض صورة افتراضية
           debugPrint('خطأ في تحميل الصورة من API: $error');
-          debugPrint('مسار الصورة: $imagePath');
+          debugPrint('مسار الصورة: $url');
           return Container(
             color: Colors.grey[300],
             child: const Center(

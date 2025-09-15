@@ -105,13 +105,17 @@ class RestaurantsRepository {
     required String phoneNumber,
     String? whatsappNumber,
     required String address,
-    required File mainImage,
+    File? mainImage,
     required List<File> thumbnailImages,
     // بيانات الخطة
     required String planType,
     required int planDays,
     required String planExpiresAt,
   }) async {
+    // التحقق من وجود الصورة الرئيسية
+    if (mainImage == null) {
+      throw Exception('الصورة الرئيسية مطلوبة لإنشاء إعلان المطعم');
+    }
 
     final Map<String, dynamic> textData = {
       'title': title,

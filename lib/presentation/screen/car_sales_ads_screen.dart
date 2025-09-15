@@ -581,6 +581,7 @@ class _CarSalesAdScreenState extends State<CarSalesAdScreen> {
 
     // تجميع البيانات في Map لتمريرها إلى الصفحة التالية
     final Map<String, dynamic> adData = {
+      'adType': 'car_sale', // إضافة نوع الإعلان
       'title': _titleController.text,
       'description': _descriptionController.text,
       'make': selectedMake!,
@@ -613,6 +614,26 @@ class _CarSalesAdScreenState extends State<CarSalesAdScreen> {
       'thumbnailImages': _thumbnailImages,
       'advertiser_location': selectedLocation,
     };
+
+    // طباعة بيانات الإعلان في Console
+    print('=== بيانات الإعلان المختارة ===');
+    print('نوع الإعلان: ${adData['adType']}');
+    print('العنوان: ${adData['title']}');
+    print('الوصف: ${adData['description']}');
+    print('الماركة: ${adData['make']}');
+    print('الموديل: ${adData['model']}');
+    print('السنة: ${adData['year']}');
+    print('الكيلومترات: ${adData['km']}');
+    print('السعر: ${adData['price']}');
+    print('نوع ناقل الحركة: ${adData['transType']}');
+    print('الإمارة: ${adData['emirate']}');
+    print('المنطقة: ${adData['area']}');
+    print('اسم المعلن: ${adData['advertiserName']}');
+    print('نوع المعلن: ${adData['advertiserType']}');
+    print('رقم الهاتف: ${adData['phoneNumber']}');
+    print('واتساب: ${adData['whatsapp']}');
+    print('عدد الصور الإضافية: ${adData['thumbnailImages']?.length ?? 0}');
+    print('================================');
 
     // الانتقال إلى صفحة اختيار نوع الإعلان مع تمرير البيانات
     final result = await context.push('/placeAnAd', extra: adData);
