@@ -144,6 +144,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get location => 'Location';
 
   @override
+  String get please_select_emirate => 'Please select emirate';
+
+  @override
+  String get please_select_district => 'Please select district';
+
+  @override
+  String get please_select_category => 'Please select category';
+
+  @override
   String get placeName => 'Al Manara Motors';
 
   @override

@@ -144,6 +144,15 @@ class AppLocalizationsAr extends AppLocalizations {
   String get location => 'الموقع';
 
   @override
+  String get please_select_emirate => 'يرجى اختيار الإمارة';
+
+  @override
+  String get please_select_district => 'يرجى اختيار المنطقة';
+
+  @override
+  String get please_select_category => 'يرجى اختيار الفئة';
+
+  @override
   String get placeName => 'منارة موتورز';
 
   @override

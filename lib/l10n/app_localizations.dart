@@ -368,6 +368,24 @@ abstract class AppLocalizations {
   /// **'Location'**
   String get location;
 
+  /// No description provided for @please_select_emirate.
+  ///
+  /// In en, this message translates to:
+  /// **'Please select emirate'**
+  String get please_select_emirate;
+
+  /// No description provided for @please_select_district.
+  ///
+  /// In en, this message translates to:
+  /// **'Please select district'**
+  String get please_select_district;
+
+  /// No description provided for @please_select_category.
+  ///
+  /// In en, this message translates to:
+  /// **'Please select category'**
+  String get please_select_category;
+
   /// No description provided for @placeName.
   ///
   /// In en, this message translates to:
