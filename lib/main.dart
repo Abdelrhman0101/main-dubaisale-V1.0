@@ -17,6 +17,7 @@ import 'package:advertising_app/presentation/providers/google_maps_provider.dart
 import 'package:advertising_app/presentation/providers/restaurant_details_provider.dart';
 import 'package:advertising_app/presentation/providers/restaurants_ad_provider.dart';
 import 'package:advertising_app/presentation/providers/restaurant_ad_provider.dart';
+import 'package:advertising_app/presentation/providers/restaurant_offers_provider.dart';
 import 'package:advertising_app/presentation/providers/restaurants_info_provider.dart';
 import 'package:advertising_app/data/repository/restaurants_repository.dart';
 import 'package:advertising_app/presentation/providers/settings_provider.dart';
@@ -82,6 +83,7 @@ void main() async {
           update: (context, restaurantsInfoProvider, previous) => previous ?? RestaurantAdProvider(restaurantsInfoProvider),
         ),
         ChangeNotifierProvider(create: (_) => RestaurantsAdProvider()),
+        ChangeNotifierProvider(create: (_) => RestaurantOffersProvider()),
  
         // يمكنك إضافة أي providers مستقبلية هنا
       ],
