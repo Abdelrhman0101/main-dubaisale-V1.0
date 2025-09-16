@@ -171,17 +171,18 @@ class RestaurantsRepository {
     final response = await _apiService.get(endpoint, token: token, query: query);
     
     if (response is List) {
-      // استخدام الـ filterByCategory في الـ fromJson مباشرة
+      // Process response as direct List
       List<BestAdvertiser> advertisers = response
           .map((json) => BestAdvertiser.fromJson(json, filterByCategory: category))
-          .where((advertiser) => advertiser.ads.isNotEmpty) // فقط الـ advertisers الذين لديهم إعلانات
+          .where((advertiser) => advertiser.ads.isNotEmpty)
           .toList();
       return advertisers;
     } 
     else if (response is Map<String, dynamic> && response['data'] is List) {
+      // Process response from data array
       List<BestAdvertiser> advertisers = (response['data'] as List)
           .map((json) => BestAdvertiser.fromJson(json, filterByCategory: category))
-          .where((advertiser) => advertiser.ads.isNotEmpty) // فقط الـ advertisers الذين لديهم إعلانات
+          .where((advertiser) => advertiser.ads.isNotEmpty)
           .toList();
       return advertisers;
     }

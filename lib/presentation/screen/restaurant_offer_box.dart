@@ -292,20 +292,24 @@ Widget _buildRestaurantGrid(List<RestaurantAdModel> ads, Size cardSize) {
 
               return Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 3),
-                child: Container(
-                  width: cardSize.width.w,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(4.r),
-                    border: Border.all(color: Colors.grey.shade300),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.grey.withOpacity(0.15),
-                        blurRadius: 5.r,
-                        offset: Offset(0, 2.h),
-                      ),
-                    ],
-                  ),
+                child: GestureDetector(
+                  onTap: () {
+                    context.push('/restaurant_details', extra: {'id': ad.id});
+                  },
+                  child: Container(
+                    width: cardSize.width.w,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(4.r),
+                      border: Border.all(color: Colors.grey.shade300),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.grey.withOpacity(0.15),
+                          blurRadius: 5.r,
+                          offset: Offset(0, 2.h),
+                        ),
+                      ],
+                    ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisAlignment: MainAxisAlignment.start,
@@ -410,6 +414,7 @@ Widget _buildRestaurantGrid(List<RestaurantAdModel> ads, Size cardSize) {
                       ),
                     ],
                   ),
+                ),
                 ),
               );
             },

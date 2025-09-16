@@ -10,6 +10,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 import 'package:readmore/readmore.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 class CarServiceDetails extends StatefulWidget {
   final CarServiceModel car_service;
@@ -473,28 +474,34 @@ class _CarServiceDetailsState extends State<CarServiceDetails> {
                         ),
                       ),
                       SizedBox(height: 8.h),
-                      SizedBox(
+                      Container(
                         height: 188.h,
                         width: double.infinity,
-                        child: Stack(
-                          children: [
-                            Positioned.fill(
-                              child: Image.asset(
-                                'assets/images/map.png',
-                                fit: BoxFit.cover,
-                              ),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(8.r),
+                          border: Border.all(color: Colors.grey.shade300),
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(8.r),
+                          child: GoogleMap(
+                            initialCameraPosition: CameraPosition(
+                              target: LatLng(25.2048, 55.2708), // Dubai coordinates as default
+                              zoom: 14.0,
                             ),
-                            Positioned(
-                              top: 100.h,
-                              left: 30.w,
-                              right: 30.w,
-                              child: Icon(
-                                Icons.location_pin,
-                                color: Colors.red,
-                                size: 40.sp,
+                            markers: {
+                              Marker(
+                                markerId: MarkerId('service_location'),
+                                position: LatLng(25.2048, 55.2708),
+                                infoWindow: InfoWindow(
+                                  title: widget.car_service.title,
+                                  snippet: widget.car_service.location ?? '',
+                                ),
                               ),
-                            ),
-                          ],
+                            },
+                            zoomControlsEnabled: false,
+                            mapToolbarEnabled: false,
+                            myLocationButtonEnabled: false,
+                          ),
                         ),
                       ),
                       SizedBox(height: 10.h),

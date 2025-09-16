@@ -190,13 +190,13 @@ GoRouter createRouter({
        GoRoute(path: '/car-rent-details', builder: (context, state) => CarRentDetailsScreen (car_rent: state.extra as CarRentModel )),
        GoRoute(path: '/car-service-details', builder: (context, state) => CarServiceDetails (car_service: state.extra as CarServiceModel )),
        GoRoute(
-         path: '/restaurant-details/:adId',
+         path: '/restaurant_details',
          builder: (context, state) {
-           final adId = int.tryParse(state.pathParameters['adId'] ?? '') ?? 0;
-           return RestaurantDetailsScreen(
-             restaurant: state.extra as RestaurantModel,
-             adId: adId
-           );
+           final data = state.extra as Map<String, dynamic>;
+           final adId = data['id'] is String 
+               ? int.tryParse(data['id']) ?? 0 
+               : data['id'] as int;
+           return RestaurantDetailsScreen(adId: adId);
          }
        ),
        GoRoute(path: '/other_service-details', builder: (context, state) => OtherServicesDetailsScreen (other_service: state.extra as OtherServiceModel )),

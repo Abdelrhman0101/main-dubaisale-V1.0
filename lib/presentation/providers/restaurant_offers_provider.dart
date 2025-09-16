@@ -49,30 +49,19 @@ class RestaurantOffersProvider with ChangeNotifier {
     try {
       final token = await _storage.read(key: 'auth_token');
       if (token == null) throw Exception('Token not found');
-      
-      print('=== DEBUG: Fetching restaurant offers ===');
-      print('Token: ${token?.substring(0, 20)}...');
-      
       final response = await _apiService.get(
         '/api/offers-box/restaurant',
         token: token,
       );
-      
-      print('=== DEBUG: API Response ===');
-      print('Response type: ${response.runtimeType}');
       
       // التعامل مع الاستجابة بناءً على نوعها
       List<dynamic> adsData;
       if (response is List) {
         // API يعيد List مباشرة
         adsData = response;
-        print('Response is List with ${adsData.length} items');
       } else if (response is Map<String, dynamic>) {
         // API يعيد Map مع مفتاح data
-        print('Response keys: ${response.keys.toList()}');
-        print('Success: ${response['success']}');
-        print('Data type: ${response['data']?.runtimeType}');
-        
+
         if (response['success'] == true && response['data'] != null) {
           adsData = response['data'];
         } else {
@@ -82,22 +71,17 @@ class RestaurantOffersProvider with ChangeNotifier {
         throw Exception('Unexpected response format: ${response.runtimeType}');
       }
       
-      print('=== DEBUG: Processing ${adsData.length} ads ===');
       
       _allFetchedOfferAds = adsData
           .map((json) => RestaurantAdModel.fromJson(json))
           .toList();
       
-      print('=== DEBUG: Parsed ${_allFetchedOfferAds.length} ads successfully ===');
       for (int i = 0; i < _allFetchedOfferAds.length && i < 3; i++) {
         final ad = _allFetchedOfferAds[i];
-        print('Ad ${i + 1}: ID=${ad.id}, Title=${ad.title}, Category=${ad.category}, District=${ad.district}');
       }
       
       _performLocalOfferFilter();
     } catch (e) {
-      print('=== DEBUG: Error fetching offers ===');
-      print('Error: $e');
       _offersError = e.toString();
     } finally {
       _isLoadingOffers = false;
@@ -107,14 +91,7 @@ class RestaurantOffersProvider with ChangeNotifier {
 
   // تطبيق الفلاتر المحلية
   void _performLocalOfferFilter() {
-    print('=== DEBUG: Applying local filters ===');
-    print('All fetched ads: ${_allFetchedOfferAds.length}');
-    print('Selected categories: $_selectedCategories');
-    print('Selected districts: $_selectedDistricts');
-    print('Price from: $offerPriceFrom, to: $offerPriceTo');
-    
     List<RestaurantAdModel> filteredList = List.from(_allFetchedOfferAds);
-    print('Initial filtered list: ${filteredList.length}');
     
     // فلتر السعر
     final fromPrice = double.tryParse(offerPriceFrom?.replaceAll(',', '') ?? '');
@@ -123,13 +100,11 @@ class RestaurantOffersProvider with ChangeNotifier {
       final beforeCount = filteredList.length;
       filteredList.retainWhere((ad) => 
           (double.tryParse(ad.priceRange.replaceAll(',', '')) ?? 0) >= fromPrice);
-      print('After price from filter: ${filteredList.length} (was $beforeCount)');
     }
     if (toPrice != null) {
       final beforeCount = filteredList.length;
       filteredList.retainWhere((ad) => 
           (double.tryParse(ad.priceRange.replaceAll(',', '')) ?? 0) <= toPrice);
-      print('After price to filter: ${filteredList.length} (was $beforeCount)');
     }
     
     // فلتر الفئات
@@ -137,7 +112,6 @@ class RestaurantOffersProvider with ChangeNotifier {
       final beforeCount = filteredList.length;
       filteredList.retainWhere((ad) => 
           _selectedCategories.contains(ad.category));
-      print('After categories filter: ${filteredList.length} (was $beforeCount)');
     }
     
     // فلتر المناطق
@@ -145,11 +119,9 @@ class RestaurantOffersProvider with ChangeNotifier {
       final beforeCount = filteredList.length;
       filteredList.retainWhere((ad) => 
           _selectedDistricts.contains(ad.district));
-      print('After districts filter: ${filteredList.length} (was $beforeCount)');
     }
     
     _offerAds = filteredList;
-    print('=== DEBUG: Final filtered ads: ${_offerAds.length} ===');
     safeNotifyListeners();
   }
 

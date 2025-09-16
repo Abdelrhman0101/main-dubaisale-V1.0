@@ -92,6 +92,13 @@ class BestAdvertiser {
     int advertiserId = json['id'] ?? 0;
     List<BestAdvertiserAd> parsedAds = [];
 
+    // Debug prints removed for cleaner terminal output
+    
+    if (json['featured_in'] is List) {
+      final featuredList = json['featured_in'] as List;
+      // Processing categories silently
+    }
+
     if (json['featured_in'] is List && (json['featured_in'] as List).isNotEmpty) {
       // إذا تم تحديد category للفلترة، نبحث عن الـ category المطلوب
       if (filterByCategory != null) {
@@ -101,21 +108,40 @@ class BestAdvertiser {
           orElse: () => null,
         );
         
+        // Category matching logic without debug output
+        
         if (matchingCategory != null && matchingCategory['latest_ads'] is List) {
+          String categoryName = matchingCategory['category']?.toString() ?? '';
           parsedAds = (matchingCategory['latest_ads'] as List)
-            .map((adJson) => BestAdvertiserAd.fromJson(adJson, advertiserId: advertiserId, advertiserName: advertiserName))
+            .map((adJson) {
+              // إضافة الفئة إلى بيانات الإعلان
+              Map<String, dynamic> adWithCategory = Map<String, dynamic>.from(adJson);
+              adWithCategory['category'] = categoryName;
+              return BestAdvertiserAd.fromJson(adWithCategory, advertiserId: advertiserId, advertiserName: advertiserName);
+            })
             .toList();
         }
       } else {
-        // إذا لم يتم تحديد category، نأخذ أول عنصر كما كان من قبل
-        final featuredData = (json['featured_in'] as List).first;
-        if (featuredData['latest_ads'] is List) {
-          parsedAds = (featuredData['latest_ads'] as List)
-            .map((adJson) => BestAdvertiserAd.fromJson(adJson, advertiserId: advertiserId, advertiserName: advertiserName))
-            .toList();
+        // إذا لم يتم تحديد category، نأخذ جميع الإعلانات من جميع الفئات
+        final featuredList = json['featured_in'] as List;
+        for (var featuredData in featuredList) {
+          if (featuredData['latest_ads'] is List) {
+            String categoryName = featuredData['category']?.toString() ?? '';
+            List<BestAdvertiserAd> categoryAds = (featuredData['latest_ads'] as List)
+              .map((adJson) {
+                // إضافة الفئة إلى بيانات الإعلان
+                Map<String, dynamic> adWithCategory = Map<String, dynamic>.from(adJson);
+                adWithCategory['category'] = categoryName;
+                return BestAdvertiserAd.fromJson(adWithCategory, advertiserId: advertiserId, advertiserName: advertiserName);
+              })
+              .toList();
+            parsedAds.addAll(categoryAds);
+          }
         }
       }
     }
+
+    // Processing completed
 
     return BestAdvertiser(
       id: advertiserId,

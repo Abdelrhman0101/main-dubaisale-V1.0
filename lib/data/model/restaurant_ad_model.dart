@@ -94,8 +94,8 @@ class RestaurantAdModel {
     }
     
     return RestaurantAdModel(
-      id: json['id'] ?? 0,
-      userId: json['user_id'] ?? 0,
+      id: int.tryParse(json['id']?.toString() ?? '0') ?? 0,
+      userId: int.tryParse(json['user_id']?.toString() ?? '0') ?? 0,
       title: json['title'] ?? 'No Title',
       description: json['description'] ?? '',
       emirate: json['emirate'] ?? '',
@@ -114,12 +114,12 @@ class RestaurantAdModel {
       addCategory: json['add_category'] ?? 'Restaurants',
       addStatus: json['add_status'] ?? 'Valid',
       adminApproved: json['admin_approved'] ?? false,
-      views: json['views'] ?? 0,
-      rank: json['rank'] ?? 0,
-      planDays: json['plan_days'] ?? 0,
+      views: int.tryParse(json['views']?.toString() ?? '0') ?? 0,
+      rank: int.tryParse(json['rank']?.toString() ?? '0') ?? 0,
+      planDays: int.tryParse(json['plan_days']?.toString() ?? '0') ?? 0,
       planExpiresAt: json['plan_expires_at'],
       activeOffersBoxStatus: json['active_offers_box_status'] ?? false,
-      activeOffersBoxDays: json['active_offers_box_days'] ?? 0,
+      activeOffersBoxDays: int.tryParse(json['active_offers_box_days']?.toString() ?? '0') ?? 0,
       activeOffersBoxExpiresAt: json['active_offers_box_expires_at'],
       mainImageUrl: json['main_image_url'],
       thumbnailImagesUrls: thumbUrls,

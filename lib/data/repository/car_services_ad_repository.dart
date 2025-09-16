@@ -88,7 +88,6 @@ class CarServicesAdRepository {
         token: token,
       );
     } catch (e) {
-      print('Error creating car service ad: $e');
       // إعادة رمي الخطأ مع رسالة أوضح
       if (e.toString().contains('500')) {
         throw Exception('حدث خطأ في الخادم، يرجى المحاولة مرة أخرى لاحقاً');

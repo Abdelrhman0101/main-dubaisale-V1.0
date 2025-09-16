@@ -4,6 +4,7 @@ import 'package:advertising_app/presentation/widget/custom_bottom_nav.dart';
 import 'package:advertising_app/presentation/widget/custom_category.dart';
 import 'package:flutter/material.dart';
 import 'package:advertising_app/generated/l10n.dart';
+import 'package:advertising_app/constant/image_url_helper.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -11,6 +12,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:advertising_app/presentation/providers/restaurants_info_provider.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 // تعريف الثوابت المستخدمة في الألوان
 const Color KTextColor = Color.fromRGBO(0, 30, 91, 1);
@@ -380,9 +382,11 @@ class _RestaurantsScreenState extends State<RestaurantsScreen> {
                                 Column(
                                   children: provider.topRestaurants.map((advertiser) {
                                     // فلترة الإعلانات للحصول على إعلانات المطاعم فقط
-                                    final restaurantAds = advertiser.ads.where((ad) => 
-                                      ad.category?.toLowerCase() == 'restaurant'
-                                    ).toList();
+                                    final restaurantAds = advertiser.ads.where((ad) {
+                                      final category = ad.category?.toLowerCase();
+                                      return category == 'restaurant' || category == 'restaurants';
+                                    }).toList();
+
                                     
                                     if (restaurantAds.isEmpty) return SizedBox.shrink();
                                     
@@ -436,7 +440,7 @@ class _RestaurantsScreenState extends State<RestaurantsScreen> {
                                               final ad = restaurantAds[index];
                                               return GestureDetector(
                                                 onTap: () {
-                                                  context.push('/ad_details', extra: ad);
+                                                  context.push('/restaurant_details', extra: {'id': ad.id});
                                                 },
                                                 child: Padding(
                                                   padding: EdgeInsetsDirectional.only(
@@ -469,12 +473,20 @@ class _RestaurantsScreenState extends State<RestaurantsScreen> {
                                                               borderRadius:
                                                                   BorderRadius.circular(4.r),
                                                               child: ad.images.isNotEmpty
-                                                                ? Image.network(
-                                                                    ad.images.first,
+                                                                ? CachedNetworkImage(
+                                                                    imageUrl: ImageUrlHelper.getFullImageUrl(ad.images.first),
                                                                     height: 94.h,
                                                                     width: double.infinity,
                                                                     fit: BoxFit.cover,
-                                                                    errorBuilder: (context, error, stackTrace) {
+                                                                    placeholder: (context, url) => Container(
+                                                                      height: 94.h,
+                                                                      width: double.infinity,
+                                                                      color: Colors.grey.shade200,
+                                                                      child: Center(
+                                                                        child: CircularProgressIndicator(strokeWidth: 2),
+                                                                      ),
+                                                                    ),
+                                                                    errorWidget: (context, url, error) {
                                                                       return Container(
                                                                         height: 94.h,
                                                                         width: double.infinity,

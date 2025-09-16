@@ -13,10 +13,7 @@ class CarAdRepository {
 
   // --- تم تحديث نوع الإرجاع (Return Type) للدالة ---
  Future<CarAdResponse> getCarAds({required String token, Map<String, dynamic>? query}) async {
-    // طباعة تشخيصية فقط في وضع التطوير
-    if (kDebugMode) {
-      print("Fetching Car Ads with query: $query");
-    }
+    // Fetching car ads with query parameters
 
     final response = await _apiService.get('/api/car-sales-ads', token: token, query: query);
     
@@ -113,24 +110,16 @@ class CarAdRepository {
   Future<CarAdModel> getCarAdDetails({required int adId, required String token}) async {
     final response = await _apiService.get('/api/car-sales-ads/$adId', token: token);
     
-    // هذا السطر مهم جدًا لنرى بنية الرد في الـ Console
-    print('----------- RAW API RESPONSE FOR AD DETAILS -----------');
-    print(response);
-
-    // نتأكد أن الرد هو من نوع Map
+    // Parse API response for car ad details
     if (response is Map<String, dynamic>) {
       
-      // الحالة الأولى: إذا كان الـ API يرسل الرد داخل مفتاح "data"
-      // مثال: {"data": { ...ad details... }}
+      // Case 1: API response wrapped in "data" key
       if (response.containsKey('data') && response['data'] is Map<String, dynamic>) {
-        print('API Response is wrapped in "data" key. Parsing from "data"...');
         return CarAdModel.fromJson(response['data']);
       }
       
-      // الحالة الثانية: إذا كان الـ API يرسل تفاصيل الإعلان مباشرة
-      // مثال: { ...ad details... }
+      // Case 2: Direct API response object
       else {
-        print('API Response is a direct object. Parsing directly...');
         return CarAdModel.fromJson(response);
       }
     }
@@ -204,8 +193,6 @@ class CarAdRepository {
    Future<List<TrimModel>> getTrims({required int modelId, required String token}) async {
     final response = await _apiService.get('/api/filters/car-sale/models/$modelId/trims', token: token);
     
-    if (kDebugMode) print('RAW API RESPONSE FOR TRIMS (Model ID: $modelId): $response');
-    
     // الحالة الأولى: إذا كان الرد قائمة مباشرة
     if (response is List) {
        return response.map((trim) => TrimModel.fromJson(trim)).toList();
@@ -221,8 +208,6 @@ class CarAdRepository {
   // --- +++ دالة getModels المعدلة كإجراء وقائي بنفس المنطق +++ ---
   Future<List<CarModel>> getModels({required int makeId, required String token}) async {
     final response = await _apiService.get('/api/filters/car-sale/makes/$makeId/models', token: token);
-    
-    if (kDebugMode) print('RAW API RESPONSE FOR MODELS (Make ID: $makeId): $response');
     
     // الحالة الأولى: إذا كان الرد قائمة مباشرة
     if (response is List) {
@@ -283,7 +268,6 @@ Future<List<CarAdModel>> getOfferAds({required String token}) async {
       final response = await _apiService.get('/api/car-makes-models', token: token);
       return response as Map<String, dynamic>?;
     } catch (e) {
-      if (kDebugMode) print('Error fetching car makes and models: $e');
       return null;
     }
   }
@@ -294,7 +278,6 @@ Future<List<CarAdModel>> getOfferAds({required String token}) async {
       final response = await _apiService.get('/api/car-specs', token: token);
       return response as Map<String, dynamic>?;
     } catch (e) {
-      if (kDebugMode) print('Error fetching car specs: $e');
       return null;
     }
   }

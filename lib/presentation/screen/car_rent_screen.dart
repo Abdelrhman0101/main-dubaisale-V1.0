@@ -8,6 +8,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
+import 'package:advertising_app/constant/image_url_helper.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 
 // تعريف الثوابت المستخدمة في الألوان
@@ -338,11 +340,17 @@ class _CarRentScreenState extends State<CarRentScreen> {
                                                   borderRadius:
                                                       BorderRadius.circular(
                                                           4.r),
-                                                  child: Image.asset(
-                                                    car.image,
+                                                  child: CachedNetworkImage(
+                                                    imageUrl: ImageUrlHelper.getFullImageUrl(car.image),
                                                     height: (94).h,
                                                     width: double.infinity,
                                                     fit: BoxFit.cover,
+                                                    placeholder: (context, url) => Container(
+                                                        color: Colors.grey[300],
+                                                        child: Center(child: CircularProgressIndicator(strokeWidth: 2))),
+                                                    errorWidget: (context, url, error) => Image.asset(
+                                                        'assets/images/car.jpg',
+                                                        fit: BoxFit.cover),
                                                   ),
                                                 ),
                                                 Positioned(

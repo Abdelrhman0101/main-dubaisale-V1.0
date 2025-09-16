@@ -75,43 +75,33 @@ class RestaurantsInfoProvider extends ChangeNotifier {
         priceTo: priceTo,
       );
     } catch (e) {
-      print('RestaurantsInfoProvider: Error fetching restaurants: $e');
       throw e;
     }
   }
 
   Future<void> fetchAllData({required String token}) async {
-    print('RestaurantsInfoProvider: fetchAllData started');
     _isLoading = true;
     _error = null;
     notifyListeners();
 
     try {
-      print('RestaurantsInfoProvider: fetching categories');
       // جلب البيانات الخاصة بقسم المطاعم
       final fetchedCategories = await _repository.getRestaurantCategories(token: token);
-      print('RestaurantsInfoProvider: categories fetched: ${fetchedCategories.length}');
       
-      print('RestaurantsInfoProvider: fetching emirates');
       final fetchedEmirates = await _repository.getEmirates(token: token); // استخدام نفس الدالة
-      print('RestaurantsInfoProvider: emirates fetched: ${fetchedEmirates.length}');
       
       _categories = fetchedCategories;
       _emirates = fetchedEmirates;
       _buildEmirateDistrictsMap();
 
-      print('RestaurantsInfoProvider: fetching contact info');
       // جلب بيانات الاتصال المشتركة
       await fetchContactInfo(token: token);
-      print('RestaurantsInfoProvider: contact info fetched');
       
     } catch (e) {
-      print('RestaurantsInfoProvider: Error occurred: $e');
       _error = "Failed to load data: ${e.toString()}";
     } finally {
       _isLoading = false;
       notifyListeners();
-      print('RestaurantsInfoProvider: fetchAllData completed, isLoading: $_isLoading, error: $_error');
     }
   }
   
@@ -128,7 +118,7 @@ class RestaurantsInfoProvider extends ChangeNotifier {
         throw Exception('API returned success: false or data is null');
       }
     } catch (e) {
-      print("Could not fetch contact info: $e");
+      // Error fetching contact info
     }
   }
 
@@ -184,11 +174,11 @@ class RestaurantsInfoProvider extends ChangeNotifier {
     try {
       final topRestaurants = await _repository.getTopRestaurants(
         token: token,
-        category: category ?? 'restaurant',
+        category: null, // جلب جميع الفئات بدلاً من فلترة واحدة فقط
       );
+      
       _topRestaurants = topRestaurants;
     } catch (e) {
-      print('RestaurantsInfoProvider: Error fetching top restaurants: $e');
       _topRestaurants = [];
     } finally {
       _isLoadingTopRestaurants = false;

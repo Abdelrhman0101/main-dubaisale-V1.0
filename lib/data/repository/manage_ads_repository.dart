@@ -30,23 +30,10 @@ class ManageAdsRepository {
       'days': days,
     };
     
-    print('=== REPOSITORY ACTIVATE OFFER ===');
-    print('Endpoint: /api/offers-box/activate');
-    print('Body: $body');
-    print('Token: ${token.substring(0, 20)}...');
-    print('================================');
-    
     try {
       // استخدم دالة 'post' الموجودة في ApiService
       final response = await _apiService.post('/api/offers-box/activate', data: body, token: token);
-      
-      print('=== REPOSITORY SUCCESS ===');
-      print('Response: $response');
-      print('=========================');
     } catch (e) {
-      print('=== REPOSITORY ERROR ===');
-      print('Error: $e');
-      print('=======================');
       rethrow;
     }
   }

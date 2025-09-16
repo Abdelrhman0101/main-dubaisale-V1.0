@@ -15,6 +15,7 @@ import 'package:advertising_app/constant/string.dart';
 import 'package:advertising_app/constant/image_url_helper.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 class CarDetailsScreen extends StatefulWidget {
   // نستقبل الآن الـ ID فقط
@@ -428,28 +429,34 @@ class _CarDetailsScreenState extends State<CarDetailsScreen> {
                   ),
                 ),
                 SizedBox(height: 8.h),
-                SizedBox(
+                Container(
                   height: 188.h,
                   width: double.infinity,
-                  child: Stack(
-                    children: [
-                      Positioned.fill(
-                        child: Image.asset(
-                          'assets/images/map.png',
-                          fit: BoxFit.cover,
-                        ),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(8.r),
+                    border: Border.all(color: Colors.grey.shade300),
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(8.r),
+                    child: GoogleMap(
+                      initialCameraPosition: CameraPosition(
+                        target: LatLng(25.2048, 55.2708), // Dubai coordinates as default
+                        zoom: 14.0,
                       ),
-                      Positioned(
-                        top: 100.h,
-                        left: 30.w,
-                        right: 30.w,
-                        child: Icon(
-                          Icons.location_pin,
-                          color: Colors.red,
-                          size: 40.sp,
+                      markers: {
+                        Marker(
+                          markerId: MarkerId('car_location'),
+                          position: LatLng(25.2048, 55.2708),
+                          infoWindow: InfoWindow(
+                            title: '${car.make} ${car.model}',
+                            snippet: '${car.emirate} ${car.area ?? ''}',
+                          ),
                         ),
-                      ),
-                    ],
+                      },
+                      zoomControlsEnabled: false,
+                      mapToolbarEnabled: false,
+                      myLocationButtonEnabled: false,
+                    ),
                   ),
                 ),
                 SizedBox(height: 10.h),

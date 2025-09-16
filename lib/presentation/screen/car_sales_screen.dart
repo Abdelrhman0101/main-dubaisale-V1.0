@@ -6,6 +6,7 @@ import 'package:advertising_app/generated/l10n.dart';
 import 'package:advertising_app/presentation/widget/custom_bottom_nav.dart';
 import 'package:advertising_app/presentation/widget/custom_category.dart';
 import 'package:advertising_app/utils/number_formatter.dart';
+import 'package:advertising_app/constant/image_url_helper.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -379,7 +380,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               ClipRRect(
                                   borderRadius: BorderRadius.circular(4.r),
                                   child: CachedNetworkImage(
-                                    imageUrl: car.mainImage,
+                                    imageUrl: ImageUrlHelper.getFullImageUrl(car.mainImage),
                                     height: (94).h,
                                     width: double.infinity,
                                     fit: BoxFit.cover,

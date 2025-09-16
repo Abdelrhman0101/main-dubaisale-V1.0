@@ -7,6 +7,7 @@ import 'package:flutter_svg/svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:advertising_app/constant/string.dart';
+import 'package:advertising_app/constant/image_url_helper.dart';
 import 'package:advertising_app/generated/l10n.dart';
 import 'package:advertising_app/presentation/widget/custom_bottom_nav.dart';
 
@@ -281,7 +282,7 @@ class __AdCardWidgetState extends State<_AdCardWidget> {
                   ClipRRect(
                       borderRadius: BorderRadius.circular(8),
                       child: CachedNetworkImage(
-                          imageUrl: ad.mainImageUrl,
+                          imageUrl: ImageUrlHelper.getFullImageUrl(ad.mainImageUrl),
                           fit: BoxFit.cover,
                           width: double.infinity,
                           height: double.infinity,

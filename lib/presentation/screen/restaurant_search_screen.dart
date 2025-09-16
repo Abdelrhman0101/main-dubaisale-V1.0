@@ -492,7 +492,7 @@ class _RestaurantSearchScreenState extends State<RestaurantSearchScreen>
   Widget _buildCard(FavoriteItemInterface item) {
     return GestureDetector(
       onTap: () {
-        context.push('/restaurant-details', extra: item);
+        context.push('/restaurant_details', extra: {'id': item.id});
       },
       child: Directionality(
         textDirection: TextDirection.ltr,
