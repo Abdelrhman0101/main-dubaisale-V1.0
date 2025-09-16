@@ -10,6 +10,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:advertising_app/presentation/providers/restaurants_info_provider.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 // تعريف الثوابت المستخدمة في الألوان
 const Color KTextColor = Color.fromRGBO(0, 30, 91, 1);
@@ -25,6 +26,7 @@ class RestaurantsScreen extends StatefulWidget {
 
 class _RestaurantsScreenState extends State<RestaurantsScreen> {
   int _selectedIndex = 6;
+  final FlutterSecureStorage _storage = const FlutterSecureStorage();
   
   // متغيرات الاختيار الواحد
   String? _selectedEmirate;
@@ -41,8 +43,10 @@ class _RestaurantsScreenState extends State<RestaurantsScreen> {
   
   Future<void> _loadData() async {
     final provider = Provider.of<RestaurantsInfoProvider>(context, listen: false);
-    final token = 'your_token_here'; // يجب الحصول على التوكن من التخزين الآمن
+    final token = await _storage.read(key: 'auth_token') ?? '';
     await provider.fetchAllData(token: token);
+    // جلب أفضل المعلنين للمطاعم
+    await provider.fetchTopRestaurants(token: token, category: 'restaurant');
   }
 
   List<String> get categories => [
@@ -350,7 +354,7 @@ class _RestaurantsScreenState extends State<RestaurantsScreen> {
                                 ],
                               ),
                               SizedBox(height: 1.h),
-                              if (provider.isLoading)
+                              if (provider.isLoading || provider.isLoadingTopRestaurants)
                                 Container(
                                   height: 200.h,
                                   child: Center(
@@ -359,12 +363,12 @@ class _RestaurantsScreenState extends State<RestaurantsScreen> {
                                     ),
                                   ),
                                 )
-                              else if (provider.categoryDisplayNames.isEmpty)
+                              else if (provider.topRestaurants.isEmpty)
                                 Container(
                                   height: 200.h,
                                   child: Center(
                                     child: Text(
-                                      'لا توجد مطاعم متاحة حالياً',
+                                      s.no_restaurants_found,
                                       style: TextStyle(
                                         color: Colors.grey,
                                         fontSize: 14.sp,
@@ -374,61 +378,69 @@ class _RestaurantsScreenState extends State<RestaurantsScreen> {
                                 )
                               else
                                 Column(
-                                  children: List.generate(
-                                    min(provider.categoryDisplayNames.length, 3),
-                                    (sectionIndex) {
-                                      final categoryName = provider.categoryDisplayNames[sectionIndex];
-                                      return Column(
-                                        children: [
-                                          Padding(
-                                            padding: EdgeInsets.symmetric(
-                                              horizontal: 8.w,
-                                              vertical: 8.h,
-                                            ),
-                                            child: Row(
-                                              mainAxisAlignment:
-                                                  MainAxisAlignment.spaceBetween,
-                                              children: [
-                                                Text(
-                                                   categoryName ?? "مطعم مميز",
-                                                   style: TextStyle(
-                                                     fontSize: 14.sp,
-                                                     fontWeight: FontWeight.w600,
-                                                     color: KTextColor,
-                                                   ),
+                                  children: provider.topRestaurants.map((advertiser) {
+                                    // فلترة الإعلانات للحصول على إعلانات المطاعم فقط
+                                    final restaurantAds = advertiser.ads.where((ad) => 
+                                      ad.category?.toLowerCase() == 'restaurant'
+                                    ).toList();
+                                    
+                                    if (restaurantAds.isEmpty) return SizedBox.shrink();
+                                    
+                                    return Column(
+                                      children: [
+                                        Padding(
+                                          padding: EdgeInsets.symmetric(
+                                            horizontal: 8.w,
+                                            vertical: 8.h,
+                                          ),
+                                          child: Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.spaceBetween,
+                                            children: [
+                                              Text(
+                                                 advertiser.advertiserName,
+                                                 style: TextStyle(
+                                                   fontSize: 14.sp,
+                                                   fontWeight: FontWeight.w600,
+                                                   color: KTextColor,
                                                  ),
-                                                const Spacer(),
-                                                InkWell(
-                                                  onTap: () {
-                                                    context.push('/AllAddsRestaurant');
-                                                  },
-                                                  child: Text(
-                                                    s.see_all_ads,
-                                                    style: TextStyle(
-                                                      fontSize: 14.sp,
-                                                      decoration: TextDecoration.underline,
-                                                      decorationColor: borderColor,
-                                                      color: borderColor,
-                                                      fontWeight: FontWeight.w500,
-                                                    ),
+                                               ),
+                                              const Spacer(),
+                                              InkWell(
+                                                onTap: () {
+                                                  context.push('/AllAddsRestaurant');
+                                                },
+                                                child: Text(
+                                                  s.see_all_ads,
+                                                  style: TextStyle(
+                                                    fontSize: 14.sp,
+                                                    decoration: TextDecoration.underline,
+                                                    decorationColor: borderColor,
+                                                    color: borderColor,
+                                                    fontWeight: FontWeight.w500,
                                                   ),
                                                 ),
-                                              ],
-                                            ),
+                                              ),
+                                            ],
                                           ),
-                                          SizedBox(
-                                            height: 175,
-                                            width: double.infinity,
-                                            child: ListView.builder(
-                                              scrollDirection: Axis.horizontal,
-                                              itemCount: min(RestaurantDataDammy.length, 20),
-                                              padding:
-                                                  EdgeInsets.symmetric(horizontal: 5.w),
-                                              itemBuilder: (context, index) {
-                                                final ad = RestaurantDataDammy[index];
-                                                return Padding(
+                                        ),
+                                        SizedBox(
+                                          height: 175,
+                                          width: double.infinity,
+                                          child: ListView.builder(
+                                            scrollDirection: Axis.horizontal,
+                                            itemCount: min(restaurantAds.length, 8),
+                                            padding:
+                                                EdgeInsets.symmetric(horizontal: 5.w),
+                                            itemBuilder: (context, index) {
+                                              final ad = restaurantAds[index];
+                                              return GestureDetector(
+                                                onTap: () {
+                                                  context.push('/ad_details', extra: ad);
+                                                },
+                                                child: Padding(
                                                   padding: EdgeInsetsDirectional.only(
-                                                    end: index == RestaurantDataDammy.length - 1 ? 0 : 4.w,
+                                                    end: index == restaurantAds.length - 1 ? 0 : 4.w,
                                                   ),
                                                   child: Container(
                                                     width: 145,
@@ -456,12 +468,35 @@ class _RestaurantsScreenState extends State<RestaurantsScreen> {
                                                             ClipRRect(
                                                               borderRadius:
                                                                   BorderRadius.circular(4.r),
-                                                              child: Image.asset(
-                                                                ad.image,
-                                                                height: 94.h,
-                                                                width: double.infinity,
-                                                                fit: BoxFit.cover,
-                                                              ),
+                                                              child: ad.images.isNotEmpty
+                                                                ? Image.network(
+                                                                    ad.images.first,
+                                                                    height: 94.h,
+                                                                    width: double.infinity,
+                                                                    fit: BoxFit.cover,
+                                                                    errorBuilder: (context, error, stackTrace) {
+                                                                      return Container(
+                                                                        height: 94.h,
+                                                                        width: double.infinity,
+                                                                        color: Colors.grey.shade200,
+                                                                        child: Icon(
+                                                                          Icons.restaurant,
+                                                                          color: Colors.grey.shade400,
+                                                                          size: 40.sp,
+                                                                        ),
+                                                                      );
+                                                                    },
+                                                                  )
+                                                                : Container(
+                                                                    height: 94.h,
+                                                                    width: double.infinity,
+                                                                    color: Colors.grey.shade200,
+                                                                    child: Icon(
+                                                                      Icons.restaurant,
+                                                                      color: Colors.grey.shade400,
+                                                                      size: 40.sp,
+                                                                    ),
+                                                                  ),
                                                             ),
                                                             Positioned(
                                                               top: 8,
@@ -485,7 +520,7 @@ class _RestaurantsScreenState extends State<RestaurantsScreen> {
                                                                       .spaceEvenly,
                                                               children: [
                                                                 Text(
-                                                                  ad.price,
+                                                                  '${ad.priceRange ?? '0'} AED',
                                                                   style: TextStyle(
                                                                     color: Colors.red,
                                                                     fontWeight:
@@ -494,7 +529,7 @@ class _RestaurantsScreenState extends State<RestaurantsScreen> {
                                                                   ),
                                                                 ),
                                                                 Text(
-                                                                  ad.title,
+                                                                  ad.title ?? 'مطعم مميز',
                                                                   maxLines: 1,
                                                                   overflow:
                                                                       TextOverflow.ellipsis,
@@ -506,7 +541,7 @@ class _RestaurantsScreenState extends State<RestaurantsScreen> {
                                                                   ),
                                                                 ),
                                                                 Text(
-                                                                  ad.location,
+                                                                  '${ad.emirate ?? ''}, ${ad.district ?? ''}',
                                                                   style: TextStyle(
                                                                     fontSize: 11.5.sp,
                                                                     color:
@@ -523,14 +558,15 @@ class _RestaurantsScreenState extends State<RestaurantsScreen> {
                                                       ],
                                                     ),
                                                   ),
-                                                );
+                                                ),
+                                              );
                                               },
                                             ),
                                           ),
-                                        ],
-                                      );
-                                    },
-                                  ),
+                                        ),
+                                      ],
+                                    );
+                                  }).toList(),
                                 ),
                             ],
                           );

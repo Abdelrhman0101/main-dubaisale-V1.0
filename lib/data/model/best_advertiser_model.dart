@@ -1,7 +1,7 @@
 // في ملف: data/model/best_advertiser_model.dart
 
 class BestAdvertiserAd {
-  final int id; // We will temporarily use the advertiser's ID for the ad.
+  final int id;
   final String make;
   final String model;
   final String? trim;
@@ -9,12 +9,18 @@ class BestAdvertiserAd {
   final String km;
   final String price;
   final String mainImage;
-  // This will be populated from the parent object
   final String advertiserName;
   // Car service specific fields
   final String? serviceType;
   final String? serviceName;
   final String? district;
+  // Restaurant specific fields
+  final String? title;
+  final String? priceRange;
+  final String? emirate;
+  final String? area;
+  final List<String> images;
+  final String? category;
 
   BestAdvertiserAd({
     required this.id,
@@ -29,6 +35,12 @@ class BestAdvertiserAd {
     this.serviceType,
     this.serviceName,
     this.district,
+    this.title,
+    this.priceRange,
+    this.emirate,
+    this.area,
+    this.images = const [],
+    this.category,
   });
 
   // Factory constructor that needs additional data (advertiser ID and name)

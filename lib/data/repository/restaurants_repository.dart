@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:advertising_app/data/model/car_service_filter_models.dart'; // لإعادة استخدام EmirateModel
 import 'package:advertising_app/data/model/restaurant_ad_model.dart';
 import 'package:advertising_app/data/model/restaurant_models.dart';
+import 'package:advertising_app/data/model/best_advertiser_model.dart';
 import 'package:advertising_app/data/web_services/api_service.dart';
 
 class RestaurantsRepository {
@@ -156,6 +157,36 @@ class RestaurantsRepository {
     }
     
     throw Exception('API response format is not as expected for RestaurantAdModel.');
+  }
+
+  // دالة لجلب أفضل المعلنين للمطاعم
+  Future<List<BestAdvertiser>> getTopRestaurants({required String token, String? category}) async {
+    // استخدام الـ category كـ query parameter بدلاً من جزء من الـ endpoint
+    String endpoint = '/api/best-advertisers';
+    Map<String, dynamic>? query;
+    if (category != null) {
+      query = {'category': category};
+    }
+    
+    final response = await _apiService.get(endpoint, token: token, query: query);
+    
+    if (response is List) {
+      // استخدام الـ filterByCategory في الـ fromJson مباشرة
+      List<BestAdvertiser> advertisers = response
+          .map((json) => BestAdvertiser.fromJson(json, filterByCategory: category))
+          .where((advertiser) => advertiser.ads.isNotEmpty) // فقط الـ advertisers الذين لديهم إعلانات
+          .toList();
+      return advertisers;
+    } 
+    else if (response is Map<String, dynamic> && response['data'] is List) {
+      List<BestAdvertiser> advertisers = (response['data'] as List)
+          .map((json) => BestAdvertiser.fromJson(json, filterByCategory: category))
+          .where((advertiser) => advertiser.ads.isNotEmpty) // فقط الـ advertisers الذين لديهم إعلانات
+          .toList();
+      return advertisers;
+    }
+    
+    throw Exception('Failed to parse Top Restaurants list from API response.');
   }
 }
 

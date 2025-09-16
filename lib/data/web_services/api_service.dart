@@ -11,9 +11,9 @@ class ApiService {
     BaseOptions(
       baseUrl: baseUrl,
       receiveDataWhenStatusError: true,
-      connectTimeout: const Duration(milliseconds: 15000), // تحسين من 20 إلى 15 ثانية
-      receiveTimeout: const Duration(milliseconds: 15000), // تحسين من 20 إلى 15 ثانية
-      sendTimeout: const Duration(milliseconds: 30000), // إضافة sendTimeout للرفع
+      connectTimeout: const Duration(milliseconds: 30000), // زيادة إلى 30 ثانية
+      receiveTimeout: const Duration(milliseconds: 30000), // زيادة إلى 30 ثانية
+      sendTimeout: const Duration(milliseconds: 45000), // زيادة إلى 45 ثانية
       headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' }
     ),
   );

@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:advertising_app/data/model/car_service_filter_models.dart'; // إعادة استخدام EmirateModel
 import 'package:advertising_app/data/model/restaurant_models.dart';
+import 'package:advertising_app/data/model/best_advertiser_model.dart';
 import 'package:advertising_app/data/repository/restaurants_repository.dart';
 import 'package:advertising_app/data/web_services/api_service.dart';
 
@@ -30,6 +31,10 @@ class RestaurantsInfoProvider extends ChangeNotifier {
   List<String> _advertiserNames = [];
   List<String> _phoneNumbers = [];
   List<String> _whatsappNumbers = [];
+  
+  // --- بيانات أفضل المعلنين ---
+  bool _isLoadingTopRestaurants = false;
+  List<BestAdvertiser> _topRestaurants = [];
 
   // --- Getters لتوفير البيانات للـ UI ---
   List<String> get categoryDisplayNames => _categories.map((e) => e.name).toList();
@@ -46,6 +51,10 @@ class RestaurantsInfoProvider extends ChangeNotifier {
   List<String> get advertiserNames => _advertiserNames;
   List<String> get phoneNumbers => _phoneNumbers;
   List<String> get whatsappNumbers => _whatsappNumbers;
+  
+  // --- Getters لأفضل المعلنين ---
+  bool get isLoadingTopRestaurants => _isLoadingTopRestaurants;
+  List<BestAdvertiser> get topRestaurants => _topRestaurants;
 
   // --- دوال جلب البيانات ---
   Future<List<dynamic>> fetchRestaurants({
@@ -164,6 +173,26 @@ class RestaurantsInfoProvider extends ChangeNotifier {
       return _emirates.firstWhere((e) => e.name == displayName).name;
     } catch (e) {
       return null;
+    }
+  }
+  
+  // --- دالة جلب أفضل المعلنين ---
+  Future<void> fetchTopRestaurants({required String token, String? category}) async {
+    _isLoadingTopRestaurants = true;
+    notifyListeners();
+    
+    try {
+      final topRestaurants = await _repository.getTopRestaurants(
+        token: token,
+        category: category ?? 'restaurant',
+      );
+      _topRestaurants = topRestaurants;
+    } catch (e) {
+      print('RestaurantsInfoProvider: Error fetching top restaurants: $e');
+      _topRestaurants = [];
+    } finally {
+      _isLoadingTopRestaurants = false;
+      notifyListeners();
     }
   }
 }
