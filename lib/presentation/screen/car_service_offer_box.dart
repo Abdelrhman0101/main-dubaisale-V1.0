@@ -419,7 +419,7 @@ class _CarServiceOfferBoxState extends State<CarServiceOfferBox> {
                                           MainAxisAlignment.spaceEvenly,
                                       children: [
                                         Text(
-                                          '${car.price} AED',
+                                          '${car.price ?? 0} AED',
                                           style: TextStyle(
                                             color: Colors.red,
                                             fontWeight: FontWeight.w600,
