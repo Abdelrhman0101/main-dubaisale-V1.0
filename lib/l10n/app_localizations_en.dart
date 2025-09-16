@@ -652,6 +652,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get restaurantsAds => 'Restaurants Ads';
 
   @override
+  String get no_restaurants_found => 'No restaurants found';
+
+  @override
   String get otherServicesAds => 'Other Services Ads';
 
   @override

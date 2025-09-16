@@ -1352,6 +1352,12 @@ abstract class AppLocalizations {
   /// **'Restaurants Ads'**
   String get restaurantsAds;
 
+  /// No description provided for @no_restaurants_found.
+  ///
+  /// In en, this message translates to:
+  /// **'No restaurants found'**
+  String get no_restaurants_found;
+
   /// No description provided for @otherServicesAds.
   ///
   /// In en, this message translates to:

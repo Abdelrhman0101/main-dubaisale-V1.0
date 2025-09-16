@@ -45,8 +45,16 @@ class BestAdvertiserAd {
 
   // Factory constructor that needs additional data (advertiser ID and name)
   factory BestAdvertiserAd.fromJson(Map<String, dynamic> json, {required int advertiserId, required String advertiserName}) {
+    // Parse images list
+    List<String> imagesList = [];
+    if (json['images'] is List) {
+      imagesList = (json['images'] as List).map((img) => img.toString()).toList();
+    } else if (json['main_image'] != null) {
+      imagesList = [json['main_image'].toString()];
+    }
+    
     return BestAdvertiserAd(
-      id: json['id'] ?? advertiserId, // Use ad id if available, otherwise fall back to advertiser id
+      id: json['id'] ?? advertiserId,
       make: json['make']?.toString() ?? '',
       model: json['model']?.toString() ?? '',
       trim: json['trim']?.toString(),
@@ -54,10 +62,16 @@ class BestAdvertiserAd {
       km: json['km']?.toString() ?? 'N/A',
       price: json['price']?.toString() ?? '0',
       mainImage: json['main_image'] ?? '',
-      advertiserName: advertiserName, // Set from the parent
+      advertiserName: advertiserName,
       serviceType: json['service_type']?.toString(),
       serviceName: json['service_name']?.toString(),
       district: json['district']?.toString(),
+      title: json['title']?.toString() ?? json['name']?.toString(),
+      priceRange: json['price_range']?.toString() ?? json['price']?.toString(),
+      emirate: json['emirate']?.toString(),
+      area: json['area']?.toString(),
+      images: imagesList,
+      category: json['category']?.toString(),
     );
   }
 }

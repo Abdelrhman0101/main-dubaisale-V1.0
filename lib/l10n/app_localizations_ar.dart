@@ -650,6 +650,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String get restaurantsAds => 'إعلانات المطاعم';
 
   @override
+  String get no_restaurants_found => 'لم يتم العثور على مطاعم';
+
+  @override
   String get otherServicesAds => 'إعلانات الخدمات الأخرى';
 
   @override

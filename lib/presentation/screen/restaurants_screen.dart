@@ -398,7 +398,7 @@ class _RestaurantsScreenState extends State<RestaurantsScreen> {
                                                 MainAxisAlignment.spaceBetween,
                                             children: [
                                               Text(
-                                                 advertiser.advertiserName,
+                                                 advertiser.name,
                                                  style: TextStyle(
                                                    fontSize: 14.sp,
                                                    fontWeight: FontWeight.w600,
@@ -560,8 +560,7 @@ class _RestaurantsScreenState extends State<RestaurantsScreen> {
                                                   ),
                                                 ),
                                               );
-                                              },
-                                            ),
+                                            }
                                           ),
                                         ),
                                       ],
