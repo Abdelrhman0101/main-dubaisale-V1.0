@@ -38,7 +38,6 @@ class _ManageScreenState extends State<ManageScreen> {
   Widget build(BuildContext context) {
     final s = S.of(context);
     final primaryColor = Color.fromRGBO(1, 84, 126, 1);
-    ;
     final myAdsProvider = context.watch<MyAdsProvider>();
 
     return Scaffold(
@@ -115,8 +114,7 @@ class _ManageScreenState extends State<ManageScreen> {
 
   Widget _buildAdsContent(MyAdsProvider provider) {
     if (provider.isLoading && provider.displayedAds.isEmpty)
-      return 
-      const Center(child: CircularProgressIndicator());
+      return const Center(child: CircularProgressIndicator());
     if (provider.error != null)
       return Center(child: Text('Error: ${provider.error}'));
     if (provider.displayedAds.isEmpty)
@@ -127,8 +125,8 @@ class _ManageScreenState extends State<ManageScreen> {
       itemCount: provider.displayedAds.length,
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      padding: EdgeInsets.zero, // إزالة المسافة الرأسية الافتراضية
-      cacheExtent: 500.0, // تحسين التخزين المؤقت
+      padding: EdgeInsets.zero,
+      cacheExtent: 500.0,
       itemBuilder: (context, index) {
         final ad = provider.displayedAds[index];
         return _AdCardWidget(key: ValueKey(ad.id), ad: ad);
@@ -229,7 +227,7 @@ class __AdCardWidgetState extends State<_AdCardWidget> {
   @override
   void initState() {
     super.initState();
-    _daysController = TextEditingController(text: "20",);
+    _daysController = TextEditingController(text: "20");
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) setState(() => _selectedAction = S.of(context).upgrade);
     });
@@ -269,139 +267,222 @@ class __AdCardWidgetState extends State<_AdCardWidget> {
         children: [
           Row(crossAxisAlignment: CrossAxisAlignment.start,
            children: [
-            SizedBox(
-              width: 140.w,
-              height: 95.h,
-              child: GestureDetector(
-                onTap: () {
-                  if (ad.categorySlug == 'car-sales')
-                    context.push('/car-details/${ad.id}');
-                },
-                child: Stack(
+            Column(
+              children: [
+                Stack(
                   children: [
-                  ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: CachedNetworkImage(
-                          imageUrl: ImageUrlHelper.getFullImageUrl(ad.mainImageUrl),
-                          fit: BoxFit.cover,
-                          width: double.infinity,
-                          height: double.infinity,
-                          placeholder: (context, url) =>
-                              const Center(child: CircularProgressIndicator()),
-                          errorWidget: (context, url, error) => Image.asset(
-                              'assets/images/car.jpg',
-                              fit: BoxFit.cover))),
-                  Positioned(
-                      bottom: 4.h,
-                      left: 4.w,
-                      child: Container(
-                          padding: EdgeInsets.symmetric(
-                              horizontal: 6.w, vertical: 2.h),
+                    SizedBox(
+                      width: 140.w,
+                      height: 95.h,
+                      child: GestureDetector(
+                        onTap: () {
+                          if (ad.categorySlug == 'car-sales')
+                            context.push('/car-details/${ad.id}');
+                        },
+                        child: Stack(
+                          children: [
+                          ClipRRect(
+                              borderRadius: BorderRadius.circular(8),
+                              child: CachedNetworkImage(
+                                  imageUrl: ImageUrlHelper.getFullImageUrl(ad.mainImageUrl),
+                                  fit: BoxFit.cover,
+                                  width: double.infinity,
+                                  height: double.infinity,
+                                  placeholder: (context, url) =>
+                                      const Center(child: CircularProgressIndicator()),
+                                  errorWidget: (context, url, error) => Image.asset(
+                                      'assets/images/car.jpg',
+                                      fit: BoxFit.cover))),
+                          Positioned(
+                              bottom: 4.h,
+                              left: 4.w,
+                              child: Container(
+                                  padding: EdgeInsets.symmetric(
+                                      horizontal: 6.w, vertical: 2.h),
+                                  decoration: BoxDecoration(
+                                      color: Color.fromRGBO(255, 255, 255, .49),
+                                      borderRadius: BorderRadius.circular(4)),
+                                  child: Text("${ad.price} AED",
+                                      style: TextStyle(
+                                          color: Colors.red,
+                                          fontSize: 10.sp,
+                                          fontWeight: FontWeight.bold)))),
+                        ]),
+                      ),
+                    ),
+                    // Plan type box positioned above the image
+                    if (ad.planType != null && ad.planType!.isNotEmpty)
+                      Positioned(
+                        top: 4.h,
+                        left: 4.w,
+                        child: Container(
+                          padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
                           decoration: BoxDecoration(
-                              color: Color.fromRGBO(255, 255, 255, .49),
-                              borderRadius: BorderRadius.circular(4)),
-                          child: Text("${ad.price} AED",
-                              style: TextStyle(
-                                  color: Colors.red,
+                            gradient: LinearGradient(
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                              colors: [Color(0xFFC9F8FE), Color(0xFF08C2C9)],
+                            ),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                ad.planType!.replaceAll('_star', ''),
+                                style: TextStyle(
+                                  color: KTextColor,
                                   fontSize: 10.sp,
-                                  fontWeight: FontWeight.bold)))),
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              if (ad.planType!.contains('_star')) ...[
+                                SizedBox(width: 2.w),
+                                Icon(
+                                  Icons.star,
+                                  color: Color(0xFFF7C325),
+                                  size: 10.sp,
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+                SizedBox(height: 2.h),
+                // Search & Views section directly under image
+                Row(children: [
+                  Icon(Icons.visibility_outlined,
+                      color: Color.fromRGBO(8, 194, 201, 1), size: 16.sp),
+                  SizedBox(width: 4.w),
+                  Row(
+                    children: [
+                      Text('${s.views}',
+                          style: TextStyle(
+                              color: Color.fromRGBO(8, 194, 201, 1),
+                              fontSize: 12.sp,
+                              fontWeight: FontWeight.w400)),
+                              Text(' 20',
+                          style: TextStyle(
+                              color: primaryColor,
+                              fontSize: 12.sp,
+                              fontWeight: FontWeight.w500)),
+                    ],
+                  )
                 ]),
-              ),
+              ],
             ),
             SizedBox(width: 10.w),
             Expanded(
-                child: Row(
+                child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                  Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                  Expanded(
-                      child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          
-                          children: [
-                        Text(_getAdTitle(ad),
-                            maxLines: 3,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                                fontSize: 14.sp,
-                                fontWeight: FontWeight.w600,
-                                color: KTextColor)),
-                        SizedBox(height: 25.h),
-                        Text(statusText,
-                            style: TextStyle(
-                                color: statusColor,
-                                fontWeight: FontWeight.w500,
-                                fontSize: 14.sp)),
-                        SizedBox(height: 4.h),
-                        Text('${s.postDate}: ${ad.createdAt.split('T').first}',
-                            style: TextStyle(
-                                color: Colors.grey.shade600,
-                                fontSize: 12.sp,
-                                fontWeight: FontWeight.w400)),
-                        SizedBox(height: 2.h),
-                        Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Flexible(
-                              child: Text('${s.expiresIn} 10 Days',
+                      Expanded(
+                          child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                            // Show title first for all categories
+                            Text(_getAdTitle(ad),
+                                maxLines: 2,
                                 overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                    fontSize: 14.sp,
+                                    fontWeight: FontWeight.w600,
+                                    color: KTextColor)),
+                            
+                            // Add make, model, year for car_sales below the title
+                            if (ad.categorySlug == 'car_sales')
+                              Padding(
+                                padding: EdgeInsets.only(top: 4.h),
+                                child: Row(
+                                  children: [
+                                    if (ad.make != null && ad.make!.isNotEmpty) ...[
+                                      Text(ad.make!,
+                                          style: TextStyle(
+                                              fontSize: 12.sp,
+                                              fontWeight: FontWeight.w500,
+                                              color: KTextColor)),
+                                      if ((ad.model != null && ad.model!.isNotEmpty) || (ad.year != null && ad.year!.isNotEmpty))
+                                        Text(' • ',
+                                            style: TextStyle(
+                                                fontSize: 12.sp,
+                                                color: KTextColor)),
+                                    ],
+                                    if (ad.model != null && ad.model!.isNotEmpty) ...[
+                                      Text(ad.model!,
+                                          style: TextStyle(
+                                              fontSize: 12.sp,
+                                              fontWeight: FontWeight.w500,
+                                              color: KTextColor)),
+                                      if (ad.year != null && ad.year!.isNotEmpty)
+                                        Text(' • ',
+                                            style: TextStyle(
+                                                fontSize: 12.sp,
+                                                color: KTextColor)),
+                                    ],
+                                    if (ad.year != null && ad.year!.isNotEmpty)
+                                      Text(ad.year!,
+                                          style: TextStyle(
+                                              fontSize: 12.sp,
+                                              fontWeight: FontWeight.w500,
+                                              color: KTextColor)),
+                                  ],
+                                ),
+                              ),
+                            
+                           // SizedBox(height: 15.h),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(statusText,
+                                    style: TextStyle(
+                                        color: statusColor,
+                                        fontWeight: FontWeight.w500,
+                                        fontSize: 14.sp)),
+                                // Delete icon aligned with status text
+                                SizedBox(
+                                  width: 15.w,
+                                  child: IconButton(
+                                    onPressed: () {}, 
+                                    icon: SvgPicture.asset('assets/icons/deleted.svg', 
+                                        width: 20.w, height: 22.h),
+                                    padding: EdgeInsets.zero,
+                                    constraints: BoxConstraints(),
+                                    iconSize: 20.w,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          //  SizedBox(height: 4.h),
+                            Text('${s.postDate}: ${_formatDateOnly(ad.createdAt)}',
                                 style: TextStyle(
                                     color: Colors.grey.shade600,
                                     fontSize: 12.sp,
                                     fontWeight: FontWeight.w400)),
-                            ),
-                            //SizedBox(width: 4.w),
-                          
-                          ],
-                        )
-                      ])),
-
-                 ]
-
-
-                )
-                ),
-      
- 
-               SizedBox(
-                width: 20,
-             
-                 child: IconButton(
-                                onPressed: () {}, 
-                                icon: SvgPicture.asset('assets/icons/deleted.svg', 
-                                    width: 20.w, height: 22.h),
-                                padding: EdgeInsets.zero,
-                                constraints: BoxConstraints(),
-                                iconSize: 20.w,
-                              ),
-               )           
-                  
+                            SizedBox(height: 2.h),
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Flexible(
+                                  child: Text('${s.expiresIn} 10 Days',
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                        color: Colors.grey.shade600,
+                                        fontSize: 12.sp,
+                                        fontWeight: FontWeight.w400)),
+                                ),
+                              ],
+                            )
+                          ])),
+                    ]),
+                ])),
           ]
           ),
-
-
-          
-          SizedBox(height: 3.h),
-          Row(children: [
-            Icon(Icons.visibility_outlined,
-                color: Color.fromRGBO(8, 194, 201, 1), size: 16.sp),
-            SizedBox(width: 4.w),
-            Row(
-              children: [
-                Text('${s.views}',
-                    style: TextStyle(
-                        color: Color.fromRGBO(8, 194, 201, 1),
-                        fontSize: 12.sp,
-                        fontWeight: FontWeight.w400)),
-                        Text(' 20',
-                    style: TextStyle(
-                        color: primaryColor,
-                        fontSize: 12.sp,
-                        fontWeight: FontWeight.w500)),
-              ],
-            )
-          ]),
           SizedBox(height: 1.h),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -449,74 +530,77 @@ class __AdCardWidgetState extends State<_AdCardWidget> {
     }
   }
 
+  String _formatDateOnly(String dateTimeString) {
+    try {
+      // Handle different date formats
+      if (dateTimeString.contains('T')) {
+        return dateTimeString.split('T').first;
+      } else if (dateTimeString.contains(' ')) {
+        return dateTimeString.split(' ').first;
+      }
+      return dateTimeString;
+    } catch (e) {
+      return dateTimeString;
+    }
+  }
+
   String _getAdTitle(MyAdModel ad) {
     switch (ad.category) {
       case 'Cars Sales':
         // للسيارات: استخدم Make Model Trim Year
         List<String> carParts = [];
-        if (ad.make != null && ad.make!.isNotEmpty) carParts.add(ad.make!);
-        if (ad.model != null && ad.model!.isNotEmpty) carParts.add(ad.model!);
-        if (ad.trim != null && ad.trim!.isNotEmpty) carParts.add(ad.trim!);
-        if (ad.year != null && ad.year!.isNotEmpty) carParts.add(ad.year!);
+        if (ad.title != null && ad.title!.isNotEmpty) carParts.add(ad.title!);
         return carParts.isNotEmpty ? carParts.join(' ') : ad.title;
-        
-      case 'Car Services':
-        // لخدمات السيارات: استخدم العنوان مع نوع الخدمة
-        if (ad.serviceType != null && ad.serviceType!.isNotEmpty) {
-          return '${ad.title} (${ad.serviceType})';
-        }
-        return ad.title;
-        
-      case 'Restaurants':
-        // للمطاعم: استخدم العنوان مع المنطقة
-        if (ad.area != null && ad.area!.isNotEmpty) {
-          return '${ad.title} - ${ad.area}';
-        }
-        return ad.title;
-        
+      case 'Car Rent':
+        // لتأجير السيارات: استخدم Make Model Year
+        List<String> rentParts = [];
+        if (ad.make != null && ad.make!.isNotEmpty) rentParts.add(ad.make!);
+        if (ad.model != null && ad.model!.isNotEmpty) rentParts.add(ad.model!);
+        if (ad.year != null && ad.year!.isNotEmpty) rentParts.add(ad.year!);
+        return rentParts.isNotEmpty ? rentParts.join(' ') : ad.title;
       default:
         return ad.title;
     }
   }
 
-  Widget _buildActionButton(
-      String label, Color primaryColor, Color borderColor, S s, MyAdModel ad) {
-    final bool isSelected = _selectedAction == label;
+  Widget _buildActionButton(String text, Color primaryColor, Color borderColor, S s, MyAdModel ad) {
+    final isSelected = _selectedAction == text;
     return Expanded(
       child: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 3.w),
+        padding: EdgeInsets.symmetric(horizontal: 2.w),
         child: ElevatedButton(
-          onPressed: () async {
-            setState(() {
-              _selectedAction = label;
-            });
-            if (label == s.edit && ad.categorySlug == 'car-sales') {
-              await context.push('/car_sales_save_ads/${ad.id}');
-              if (mounted)
-                Provider.of<MyAdsProvider>(context, listen: false).fetchMyAds();
-            }
-          },
+          onPressed: () => setState(() => _selectedAction = text),
           style: ElevatedButton.styleFrom(
-              backgroundColor: isSelected ? primaryColor : Colors.white,
-              side: BorderSide(color: isSelected ? primaryColor : borderColor),
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8)),
-              padding: EdgeInsets.symmetric(vertical:8.h),
-              elevation: 0),
-          child: Text(label,
-              style: TextStyle(
-                  color: isSelected ? Colors.white : primaryColor,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 13.sp)),
+            backgroundColor: isSelected ? primaryColor : Colors.transparent,
+            shadowColor: Colors.transparent,
+            elevation: 0,
+            padding: EdgeInsets.symmetric(vertical: 8.h),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+              side: BorderSide(color: borderColor, width: 1)
+            )
+          ),
+          child: Text(
+            text,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: isSelected ? Colors.white : primaryColor,
+              fontWeight: FontWeight.w500,
+              fontSize: 11.sp
+            )
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildPaymentRow(
-      S s, Color primaryColor, Color borderColor, MyAdModel ad) {
+  Widget _buildPaymentRow(S s, Color primaryColor, Color borderColor, MyAdModel ad) {
     final labelStyle = TextStyle(
-        color: KTextColor, fontSize: 11.sp, fontWeight: FontWeight.w500);
+      fontSize: 10.sp,
+      fontWeight: FontWeight.w500,
+      color: primaryColor
+    );
+    
     final provider = context.watch<MyAdsProvider>();
 
     return Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
@@ -525,7 +609,16 @@ class __AdCardWidgetState extends State<_AdCardWidget> {
           child: Container(
             height: 40,
             child: ElevatedButton(
-                onPressed: () {},
+                onPressed: () {
+                  // Active Offers Box functionality
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('${s.activeOffersBox} activated!'),
+                      backgroundColor: primaryColor,
+                      duration: Duration(seconds: 2),
+                    ),
+                  );
+                },
                 child: Text(s.activeOffersBox,
                     textAlign: TextAlign.center,
                     style: TextStyle(
@@ -548,8 +641,8 @@ class __AdCardWidgetState extends State<_AdCardWidget> {
             Text(s.days, style: labelStyle),
             SizedBox(height: 2.h),
             Container(
-                padding: EdgeInsets.symmetric(vertical:10.h),
-                height: 36.h,
+                padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
+                height: 38.h,
                 decoration: BoxDecoration(
                     border: Border.all(color: borderColor),
                     borderRadius: BorderRadius.circular(8)),
@@ -559,13 +652,12 @@ class __AdCardWidgetState extends State<_AdCardWidget> {
                         textAlign: TextAlign.center,
                         keyboardType: TextInputType.number,
                         style: TextStyle(
-                            color: KTextColor,
-                            fontWeight: FontWeight.w600,
-                            fontSize: 14.sp),
-                        decoration: const InputDecoration(
+                            fontSize: 12.sp,
+                            fontWeight: FontWeight.w500,
+                            color: primaryColor),
+                        decoration: InputDecoration(
                             border: InputBorder.none,
-                            isDense: true,
-                            contentPadding: EdgeInsets.zero)))),
+                            contentPadding: EdgeInsets.zero))))
           ])),
       SizedBox(width: 2.w),
       Expanded(
@@ -574,150 +666,68 @@ class __AdCardWidgetState extends State<_AdCardWidget> {
             Text(s.amount, style: labelStyle),
             SizedBox(height: 2.h),
             Container(
-                height: 36.h,
-                alignment: Alignment.center,
+                padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
+                height: 38.h,
                 decoration: BoxDecoration(
-                    color: Colors.grey.shade100,
                     border: Border.all(color: borderColor),
                     borderRadius: BorderRadius.circular(8)),
-                child: Text(_amountController.text,
-                    style: TextStyle(
-                        color: KTextColor,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 14.sp)))
+                child: Center(
+                    child: TextFormField(
+                        controller: _amountController,
+                        textAlign: TextAlign.center,
+                        keyboardType: TextInputType.number,
+                        style: TextStyle(
+                            fontSize: 12.sp,
+                            fontWeight: FontWeight.w500,
+                            color: primaryColor),
+                        decoration: InputDecoration(
+                            border: InputBorder.none,
+                            contentPadding: EdgeInsets.zero))))
           ])),
-      SizedBox(width: 4.w),
+      SizedBox(width: 2.w),
       Expanded(
-          flex: 2,
-          child: SizedBox(
-            height: 36.h,
+          flex: 1,
+          child: Container(
+            height: 40,
             child: ElevatedButton(
-                onPressed: (provider.isActivatingOffer &&
-                        provider.activatingAdId == ad.id)
-                    ? null
-                    : () {
-                        // +++ هذا هو الشرط الجديد +++
-                        if (ad.status.toLowerCase() != 'valid') {
-                          showDialog(
-                            context: context,
-                            builder: (context) => AlertDialog(
-                              title: Text(
-                                "Action Not Allowed",
-                                style: TextStyle(color: KTextColor),
-                              ),
-                              content: Text(
-                                "This ad must be 'Valid' to be activated in the offers box.",
-                                style: TextStyle(color: KTextColor),
-                              ),
-                              actions: [
-                                TextButton(
-                                    onPressed: () => Navigator.pop(context),
-                                    child: Text("OK"))
-                              ],
-                            ),
-                          );
-                          return; // أوقف التنفيذ
-                        }
-
-                        final days = int.tryParse(_daysController.text);
-                        if (days == null || days <= 0) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                  content: Text(
-                                      "Please enter a valid number of days.")));
-                          return;
-                        }
-
-                        // استخدام categorySlug من الخادم مباشرة
-                        String categorySlug = ad.categorySlug.isNotEmpty 
-                            ? ad.categorySlug 
-                            : 'car_sales'; // قيمة افتراضية في حالة عدم وجود categorySlug
-
-                        print('=== BUTTON CLICK DEBUG ===');
-                        print('Ad ID: ${ad.id}');
-                        print('Ad Category: ${ad.category}');
-                        print('Ad CategorySlug from API: "${ad.categorySlug}"');
-                        print('CategorySlug isEmpty: ${ad.categorySlug.isEmpty}');
-                        print('Final CategorySlug: "$categorySlug"');
-                        print('Days: $days');
-                        print('Ad Status: ${ad.status}');
-                        print('Valid category slugs: car_sales, car_services, restaurant');
-                        print('========================');
-
-                        context
-                            .read<MyAdsProvider>()
-                            .activateOffer(
-                                adId: ad.id,
-                                categorySlug: categorySlug,
-                                days: days)
-                            .then((success) {
-                          if (!mounted) return;
-                          if (success) {
-                            showDialog(
-                              context: context,
-                              builder: (context) => AlertDialog(
-                                title: Text(
-                                  "Success",
-                                  style: TextStyle(color: Colors.green),
-                                ),
-                                content: Text(
-                                  "The ad has been successfully added to the offers box!",
-                                  style: TextStyle(color: Colors.green),
-                                ),
-                                actions: [
-                                  TextButton(
-                                      onPressed: () => Navigator.pop(context),
-                                      child: Text(
-                                        "Great!",
-                                        style: TextStyle(color: Colors.green),
-                                      ))
-                                ],
-                              ),
-                            );
-                          } else {
-                            // إظهار رسالة الخطأ
-                            final errorMessage = provider.activationError ?? 'Unknown error occurred';
-                            showDialog(
-                              context: context,
-                              builder: (context) => AlertDialog(
-                                title: Text(
-                                  "Error",
-                                  style: TextStyle(color: Colors.red),
-                                ),
-                                content: Text(
-                                  errorMessage,
-                                  style: TextStyle(color: Colors.red),
-                                ),
-                                actions: [
-                                  TextButton(
-                                      onPressed: () => Navigator.pop(context),
-                                      child: Text(
-                                        "OK",
-                                        style: TextStyle(color: Colors.red),
-                                      ))
-                                ],
-                              ),
-                            );
-                          }
-                        });
-                      },
+                onPressed: () {
+                  // Pay button functionality
+                  final days = _daysController.text;
+                  final amount = _amountController.text;
+                  
+                  if (days.isNotEmpty && amount.isNotEmpty) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('${s.pay} - $days ${s.days}, $amount AED'),
+                        backgroundColor: Colors.green,
+                        duration: Duration(seconds: 3),
+                      ),
+                    );
+                    
+                    // Here you can add navigation to payment screen or payment processing
+                    // context.push('/payment');
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Please enter days and amount'),
+                        backgroundColor: Colors.red,
+                        duration: Duration(seconds: 2),
+                      ),
+                    );
+                  }
+                },
+                child: Text(s.pay,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                        fontSize: 11.sp,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white)),
                 style: ElevatedButton.styleFrom(
                     backgroundColor: primaryColor,
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8)),
-                    padding: EdgeInsets.symmetric(vertical: 11.h)),
-                child: (provider.isActivatingOffer &&
-                        provider.activatingAdId == ad.id)
-                    ? const SizedBox(
-                        height: 20,
-                        width: 20,
-                        child: CircularProgressIndicator(
-                            color: Colors.white, strokeWidth: 3))
-                    : Text(s.pay,
-                        style: TextStyle(
-                            fontSize: 14.sp,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white))),
+                    padding:
+                        EdgeInsets.symmetric(horizontal: 4.w, vertical: 8.h))),
           ))
     ]);
   }

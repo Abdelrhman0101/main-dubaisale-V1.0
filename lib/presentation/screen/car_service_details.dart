@@ -244,7 +244,7 @@ class _CarServiceDetailsState extends State<CarServiceDetails> {
                                 ),
                                 Spacer(),
                                 Text(
-                                  widget.car_service.createdAt ?? 'N/A',
+                                  widget.car_service.createdAt?.split('T').first ??  'N/A',
                                   style: TextStyle(
                                       color: Colors.grey, fontSize: 10.sp),
                                 ),
@@ -297,15 +297,6 @@ class _CarServiceDetailsState extends State<CarServiceDetails> {
                             // ),
                             SizedBox(height: 6.h),
                             Text(
-                              widget.car_service.serviceName,
-                              style: TextStyle(
-                                fontSize: 14.sp,
-                                color: KTextColor,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                            SizedBox(height: 6.h),
-                            Text(
                               widget.car_service.title,
                               style: TextStyle(
                                 fontSize: 14.sp,
@@ -314,26 +305,36 @@ class _CarServiceDetailsState extends State<CarServiceDetails> {
                               ),
                             ),
                             SizedBox(height: 6.h),
-                            Row(
-                              children: [
-                                SvgPicture.asset(
-                                  'assets/icons/locationicon.svg',
-                                  width: 20.w,
-                                  height: 18.h,
-                                ),
-                                SizedBox(width: 6.w),
-                                Expanded(
-                                  child: Text(
-                                    "${widget.car_service.emirate} ${widget.car_service.district}  ${widget.car_service.area} ",
-                                    style: TextStyle(
-                                      fontSize: 14.sp,
-                                      color: KTextColor,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                ),
-                              ],
+                            Text(
+                              widget.car_service.serviceType,
+                              style: TextStyle(
+                                fontSize: 14.sp,
+                                color: KTextColor,
+                                fontWeight: FontWeight.w500,
+                              ),
                             ),
+                            SizedBox(height: 6.h),
+                            // Row(
+                            //   children: [
+                            //     SvgPicture.asset(
+                            //       'assets/icons/locationicon.svg',
+                            //       width: 20.w,
+                            //       height: 18.h,
+                            //     ),
+                            //     SizedBox(width: 6.w),
+                            //     Expanded(
+                            //       child: Text(
+                            //         "${widget.car_service.emirate} ${widget.car_service.district}  ${widget.car_service.area} ",
+                            //         style: TextStyle(
+                            //           fontSize: 14.sp,
+                            //           color: KTextColor,
+                            //           fontWeight: FontWeight.w500,
+                            //         ),
+                            //       ),
+                            //     ),
+                            //   ],
+                            // ),
+                            
                             SizedBox(height: 5.h),
                           ],
                         ),
@@ -403,7 +404,7 @@ class _CarServiceDetailsState extends State<CarServiceDetails> {
                             Expanded(
                               child: ReadMoreText(
                                widget.car_service.description,
-                                trimLines: 2,
+                                trimLines: 5,
                                 colorClickableText:
                                     Color.fromARGB(255, 9, 37, 108),
                                 trimMode: TrimMode.Line,

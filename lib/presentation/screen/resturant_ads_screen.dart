@@ -4,6 +4,7 @@ import 'dart:io';
 
 import 'package:advertising_app/presentation/providers/google_maps_provider.dart';
 import 'package:advertising_app/presentation/providers/restaurants_info_provider.dart';
+import 'package:advertising_app/presentation/providers/auth_repository.dart';
 import 'package:advertising_app/utils/phone_number_formatter.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter/foundation.dart';
@@ -52,7 +53,7 @@ class _RestaurantsAdScreenState extends State<RestaurantsAdScreen> {
   String selectedLocation = '';
   LatLng? selectedLatLng;
   bool _isLoadingLocation = false;
-
+  final FlutterSecureStorage _storage = const FlutterSecureStorage();
 
   @override
   void initState() {
@@ -65,10 +66,176 @@ class _RestaurantsAdScreenState extends State<RestaurantsAdScreen> {
         print('RestaurantsAdsScreen: calling fetchAllData');
         await context.read<RestaurantsInfoProvider>().fetchAllData(token: token);
         print('RestaurantsAdsScreen: fetchAllData completed');
+        
+        // التحقق من بيانات البروفايل
+        final authProvider = context.read<AuthProvider>();
+        await _checkUserProfileData(authProvider);
+        
+        // تحميل الموقع المحفوظ من FlutterSecureStorage
+        await _loadSavedLocation();
       } else {
         print('RestaurantsAdsScreen: token is null or widget not mounted');
       }
     });
+  }
+
+  // دالة للتحقق من بيانات البروفايل المطلوبة
+  Future<void> _checkUserProfileData(AuthProvider authProvider) async {
+    // جلب بيانات المستخدم إذا لم تكن متاحة
+    if (authProvider.user == null) {
+      await authProvider.fetchUserProfile();
+    }
+
+    final user = authProvider.user;
+    if (user == null) return;
+
+    // تعيين موقع المستخدم المحفوظ إذا كان متوفراً وغير فارغ
+    if (user.advertiserLocation != null && user.advertiserLocation!.trim().isNotEmpty) {
+      setState(() {
+        selectedLocation = user.advertiserLocation!;
+      });
+    }
+
+    List<String> missingFields = [];
+
+    // التحقق من الحقول المطلوبة
+    if (user.phone.trim().isEmpty) {
+      missingFields.add('phone number');
+    }
+    if ((user.advertiserLocation == null || user.advertiserLocation!.trim().isEmpty) &&
+        (user.latitude == null || user.longitude == null)) {
+      missingFields.add('your location');
+    }
+
+    // إظهار التنبيه إذا كانت هناك حقول ناقصة
+    if (missingFields.isNotEmpty && mounted) {
+      _showProfileIncompleteDialog(missingFields);
+    }
+  }
+
+  // دالة لإظهار تنبيه البيانات الناقصة
+  void _showProfileIncompleteDialog(List<String> missingFields) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return WillPopScope(
+          onWillPop: () async {
+            // عند الضغط على زر الرجوع، الخروج من الصفحة بالكامل
+            Navigator.of(context).pop(); // إغلاق الـ dialog
+            Navigator.of(context).pop(); // العودة إلى الشاشة السابقة
+            return false;
+          },
+          child: AlertDialog(
+            backgroundColor: Colors.white,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            title: const Text(
+              "Incomplete profile",
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: KTextColor,
+                fontSize: 18,
+              ),
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'You must complete the following fields in your profile before adding the advertisement:',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: KTextColor,
+                  ),
+                ),
+                const SizedBox(height: 15),
+                ...missingFields
+                    .map((field) => Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 4),
+                          child: Row(
+                            children: [
+                              const Icon(
+                                Icons.error_outline,
+                                color: Color(0xFFE74C3C),
+                                size: 18,
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Text(
+                                  field,
+                                  style: const TextStyle(
+                                    color: Color(0xFFE74C3C),
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ))
+                    .toList(),
+              ],
+            ),
+            actions: [
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () {
+                    context.push('/editprofile');
+                    Navigator.of(context).pop();
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Color.fromRGBO(1, 84, 126, 1),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    elevation: 2,
+                  ),
+                  child: const Text(
+                    'Go to Profile',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  // دالة تحميل الموقع المحفوظ من FlutterSecureStorage
+  Future<void> _loadSavedLocation() async {
+    try {
+      final savedLat = await _storage.read(key: 'saved_latitude');
+      final savedLng = await _storage.read(key: 'saved_longitude');
+      final savedAddress = await _storage.read(key: 'saved_address');
+
+      if (savedLat != null && savedLng != null && savedAddress != null) {
+        setState(() {
+          selectedLatLng = LatLng(double.parse(savedLat), double.parse(savedLng));
+          selectedLocation = savedAddress;
+        });
+
+        // تحريك الكاميرا إلى الموقع المحفوظ
+        final googleMapsProvider = context.read<GoogleMapsProvider>();
+        await googleMapsProvider.moveCameraToLocation(
+          double.parse(savedLat),
+          double.parse(savedLng),
+          zoom: 16.0,
+        );
+      }
+    } catch (e) {
+      print('Error loading saved location: $e');
+    }
   }
 
   @override
@@ -88,13 +255,38 @@ class _RestaurantsAdScreenState extends State<RestaurantsAdScreen> {
   Future<void> _pickThumbnailImages() async {
     const int maxImages = 3;
     final int remainingSlots = maxImages - _thumbnailImages.length;
+    
     if (remainingSlots <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('You have already added the maximum of $maxImages images.')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('لقد أضفت الحد الأقصى من الصور (3 صور)'),
+          backgroundColor: Colors.orange,
+        )
+      );
       return;
     }
-    final List<XFile> pickedImages = await _picker.pickMultiImage(imageQuality: 85, limit: remainingSlots);
+    
+    // اختيار الصور بدون تحديد limit لنتمكن من التحكم بالعدد بأنفسنا
+    final List<XFile> pickedImages = await _picker.pickMultiImage(imageQuality: 85);
+    
     if (pickedImages.isNotEmpty) {
-      setState(() => _thumbnailImages.addAll(pickedImages.map((img) => File(img.path))));
+      // أخذ أول 3 صور فقط أو العدد المتبقي المسموح به
+      final List<XFile> imagesToAdd = pickedImages.take(remainingSlots).toList();
+      
+      setState(() {
+        _thumbnailImages.addAll(imagesToAdd.map((img) => File(img.path)));
+      });
+      
+      // إظهار رسالة إذا تم اختيار أكثر من العدد المسموح
+      if (pickedImages.length > remainingSlots) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('تم اختيار أول $remainingSlots صور فقط. الحد الأقصى المسموح هو 3 صور'),
+            backgroundColor: Colors.orange,
+            duration: const Duration(seconds: 3),
+          )
+        );
+      }
     }
   }
   
@@ -231,10 +423,10 @@ class _RestaurantsAdScreenState extends State<RestaurantsAdScreen> {
                     const SizedBox(height: 7),
                     _buildFormRow([
                       _buildTitledTextFormField(s.area, _areaController, borderColor, currentLocale, hintText: 'Alkhail Heights', isRequired: true),
-                      _buildTitledTextFormField(s.price, _priceRangeController, borderColor, currentLocale, hintText: 'e.g., 50-100', isRequired: true),
+                      _buildTitledTextFormField(s.price, _priceRangeController, borderColor, currentLocale, hintText: 'AED 50', isRequired: true),
                     ]),
                     const SizedBox(height: 7),
-                    _buildTitledTextFormField(s.title, _titleController, borderColor, currentLocale, hintText: 'Biryani Chicken', isRequired: true, minLines: 2),
+                    _buildTitledTextFormField(s.title, _titleController, borderColor, currentLocale, hintText: 'Biryani Chicken', isRequired: true,  minLines: 3, maxLines: 4),
                     const SizedBox(height: 7),
                     TitledSelectOrAddField(
                       title: s.advertiserName, value: selectedAdvertiserName, items: infoProvider.advertiserNames,
@@ -300,7 +492,13 @@ class _RestaurantsAdScreenState extends State<RestaurantsAdScreen> {
                       child: Row(children: [
                         SvgPicture.asset('assets/icons/locationicon.svg', width: 20.w, height: 20.h),
                         SizedBox(width: 8.w),
-                        Expanded(child: Text(selectedLocation.isNotEmpty ? selectedLocation : "s.noLocationSelected", style: TextStyle(fontSize: 14.sp, color: KTextColor, fontWeight: FontWeight.w500))),
+                        Expanded(
+                            child: 
+                            Text(selectedLocation.isEmpty ? 'يرجى تحديد الموقع' : selectedLocation,
+                                style: TextStyle(
+                                    fontSize: 14.sp,
+                                    color: selectedLocation.isEmpty ? Colors.red : KTextColor,
+                                    fontWeight: FontWeight.w500)))
                       ]),
                     ),
                     SizedBox(height: 8.h),
@@ -328,14 +526,15 @@ class _RestaurantsAdScreenState extends State<RestaurantsAdScreen> {
     return Row(crossAxisAlignment: CrossAxisAlignment.start, children: children.map((child) => Expanded(child: Padding(padding: const EdgeInsets.symmetric(horizontal: 4.0), child: child))).toList());
   }
 
-  Widget _buildTitledTextFormField(String title, TextEditingController controller, Color borderColor, String currentLocale, {bool isNumber = false, String? hintText, int minLines = 1, bool isRequired = false}) {
+  Widget _buildTitledTextFormField(String title, TextEditingController controller, Color borderColor, String currentLocale, {bool isNumber = false, String? hintText, int minLines = 1,int maxLines = 1, bool isRequired = false}) {
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       Text(title, style: TextStyle(fontWeight: FontWeight.w600, color: KTextColor, fontSize: 14.sp)),
       const SizedBox(height: 4),
       TextFormField(
           controller: controller,
           minLines: minLines,
-          maxLines: minLines > 1 ? minLines + 2 : 1,
+        maxLines: maxLines,
+        maxLength: maxLines > 1 ? 90 : null,
           style: TextStyle(fontWeight: FontWeight.w500, color: KTextColor, fontSize: 12.sp),
           textAlign: currentLocale == 'ar' ? TextAlign.right : TextAlign.left,
           keyboardType: isNumber ? TextInputType.number : TextInputType.text,

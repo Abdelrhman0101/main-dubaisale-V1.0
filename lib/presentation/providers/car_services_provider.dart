@@ -171,6 +171,22 @@ Future<void> fetchAds({Map<String, String>? filters}) async {
     _performLocalFilter();
   }
   
+  /// مسح فلاتر السعر
+  void clearPriceFilters() {
+    priceFrom = null;
+    priceTo = null;
+    _performLocalFilter();
+  }
+  
+  /// مسح جميع الفلاتر
+  void clearAllFilters() {
+    priceFrom = null;
+    priceTo = null;
+    // إعادة تعيين البيانات للقائمة الأصلية
+    _ads = List.from(_allFetchedAds);
+    notifyListeners();
+  }
+  
   /// تطبيق جميع الفلاتر المحلية على البيانات المحفوظة
   void _performLocalFilter() {
     List<CarServiceModel> filteredList = List.from(_allFetchedAds);

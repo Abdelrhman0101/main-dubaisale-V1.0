@@ -380,7 +380,7 @@ Widget _buildRestaurantGrid(List<RestaurantAdModel> ads, Size cardSize) {
                                 ),
                               ),
                               Text(
-                                ad.phoneNumber,
+                                ad.advertiserName,
                                 style: TextStyle(
                                   fontWeight: FontWeight.w600,
                                   fontSize: 12.sp,

@@ -53,6 +53,21 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
+  List<CarModel> _getModelsWithAllAndOther(CarAdProvider provider) {
+    List<CarModel> modelsWithOptions = [];
+    
+    // إضافة خيار "All"
+    modelsWithOptions.add(CarModel(id: -1, name: "All", makeId: -1));
+    
+    // إضافة النماذج الحقيقية
+    modelsWithOptions.addAll(provider.models);
+    
+    // إضافة خيار "Other"
+    modelsWithOptions.add(CarModel(id: -2, name: "Other", makeId: -2));
+    
+    return modelsWithOptions;
+  }
+
   List<String> get categories => [
         S.of(context).carsales,
         S.of(context).realestate,
@@ -183,22 +198,20 @@ class _HomeScreenState extends State<HomeScreen> {
                                       color: Colors.red.shade700,
                                       fontSize: 12.sp))),
                         SizedBox(height: 3.h),
-                        if (carAdProvider.selectedMake != null &&
-                            carAdProvider.selectedMake!.id > 0)
-                          _buildSingleSelectField<CarModel>(
-                            context,
-                            s.model,
-                            carAdProvider.selectedModel,
-                            carAdProvider.models,
-                            (selection) {
-                              carAdProvider.updateSelectedModel(selection);
-                              setState(() {
-                                _showValidationError = false;
-                              });
-                            },
-                            displayNamer: (model) => model.name,
-                            isLoading: carAdProvider.isLoadingModels,
-                          ),
+                        _buildSingleSelectField<CarModel>(
+                          context,
+                          s.model,
+                          carAdProvider.selectedModel,
+                          _getModelsWithAllAndOther(carAdProvider),
+                          (selection) {
+                            carAdProvider.updateSelectedModel(selection);
+                            setState(() {
+                              _showValidationError = false;
+                            });
+                          },
+                          displayNamer: (model) => model.name,
+                          isLoading: carAdProvider.isLoadingModels,
+                        ),
                         SizedBox(height: 4.h),
                         Padding(
                           padding:

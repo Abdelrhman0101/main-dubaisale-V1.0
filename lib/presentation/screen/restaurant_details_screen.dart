@@ -1,6 +1,7 @@
 import 'package:advertising_app/generated/l10n.dart';
 import 'package:advertising_app/data/model/restaurant_ad_model.dart';
 import 'package:advertising_app/presentation/providers/restaurant_details_provider.dart';
+import 'package:advertising_app/utils/number_formatter.dart';
 import 'package:flutter/material.dart';
 import 'package:advertising_app/constant/string.dart';
 import 'package:advertising_app/constant/image_url_helper.dart';
@@ -26,6 +27,18 @@ class RestaurantDetailsScreen extends StatefulWidget {
 class _RestaurantDetailsScreenState extends State<RestaurantDetailsScreen> {
   int _currentPage = 0;
   late PageController _pageController;
+
+  int _getImageCount(RestaurantAdModel restaurant) {
+    if (restaurant.thumbnailImagesUrls.isNotEmpty) {
+      return restaurant.thumbnailImagesUrls.length;
+    } else if (restaurant.thumbnailImages.isNotEmpty) {
+      return restaurant.thumbnailImages.length;
+    } else if ((restaurant.mainImageUrl != null && restaurant.mainImageUrl!.isNotEmpty) ||
+               (restaurant.mainImage != null && restaurant.mainImage!.isNotEmpty)) {
+      return 1;
+    }
+    return 0;
+  }
 
   @override
   void initState() {
@@ -120,41 +133,27 @@ class _RestaurantDetailsScreenState extends State<RestaurantDetailsScreen> {
                       width: double.infinity,
                       child: PageView.builder(
                         controller: _pageController,
-                        itemCount: restaurant.thumbnailImagesUrls.isNotEmpty 
-                            ? restaurant.thumbnailImagesUrls.length 
-                            : (restaurant.thumbnailImages.isNotEmpty 
-                                ? restaurant.thumbnailImages.length 
-                                : (restaurant.mainImageUrl != null && restaurant.mainImageUrl!.isNotEmpty 
-                                    ? 1 
-                                    : (restaurant.mainImage != null ? 1 : 0))),
+                        itemCount: _getImageCount(restaurant),
                         onPageChanged: (index) =>
                             setState(() => _currentPage = index),
                         itemBuilder: (context, index) {
-                          String imageUrl;
+                          String? imageUrl;
                           
-                          // طباعة للتشخيص
-                          print('DEBUG: thumbnailImages count: ${restaurant.thumbnailImages.length}');
-                          print('DEBUG: thumbnailImages: ${restaurant.thumbnailImages}');
-                          print('DEBUG: mainImage: ${restaurant.mainImage}');
-                          print('DEBUG: thumbnailImagesUrls count: ${restaurant.thumbnailImagesUrls.length}');
-                          print('DEBUG: thumbnailImagesUrls: ${restaurant.thumbnailImagesUrls}');
-                          print('DEBUG: mainImageUrl: ${restaurant.mainImageUrl}');
-                          
-                          // استخدام thumbnailImagesUrls أولاً إذا كانت متوفرة
-                          if (restaurant.thumbnailImagesUrls.isNotEmpty) {
+                          // تحديد مصدر الصور بترتيب الأولوية
+                          if (restaurant.thumbnailImagesUrls.isNotEmpty && index < restaurant.thumbnailImagesUrls.length) {
                             imageUrl = restaurant.thumbnailImagesUrls[index];
-                            print('DEBUG: Using thumbnailImagesUrls[$index]: $imageUrl');
-                          } else if (restaurant.thumbnailImages.isNotEmpty) {
+                          } else if (restaurant.thumbnailImages.isNotEmpty && index < restaurant.thumbnailImages.length) {
                             imageUrl = ImageUrlHelper.getFullImageUrl(restaurant.thumbnailImages[index]);
-                            print('DEBUG: Using thumbnailImages[$index]: $imageUrl');
-                          } else if (restaurant.mainImageUrl != null && restaurant.mainImageUrl!.isNotEmpty) {
-                            imageUrl = restaurant.mainImageUrl!;
-                            print('DEBUG: Using mainImageUrl: $imageUrl');
-                          } else if (restaurant.mainImage != null) {
-                            imageUrl = ImageUrlHelper.getFullImageUrl(restaurant.mainImage!);
-                            print('DEBUG: Using mainImage: $imageUrl');
-                          } else {
-                            print('DEBUG: No images available');
+                          } else if (index == 0) {
+                            // للصورة الأولى فقط، استخدم الصورة الرئيسية
+                            if (restaurant.mainImageUrl != null && restaurant.mainImageUrl!.isNotEmpty) {
+                              imageUrl = restaurant.mainImageUrl!;
+                            } else if (restaurant.mainImage != null && restaurant.mainImage!.isNotEmpty) {
+                              imageUrl = ImageUrlHelper.getFullImageUrl(restaurant.mainImage!);
+                            }
+                          }
+                          
+                          if (imageUrl == null || imageUrl.isEmpty) {
                             return Container(
                               color: Colors.grey[300],
                               child: const Icon(
@@ -169,8 +168,11 @@ class _RestaurantDetailsScreenState extends State<RestaurantDetailsScreen> {
                             imageUrl: imageUrl,
                             fit: BoxFit.cover,
                             width: double.infinity,
-                            placeholder: (context, url) => Center(
-                              child: CircularProgressIndicator(strokeWidth: 2),
+                            placeholder: (context, url) => Container(
+                              color: Colors.grey[200],
+                              child: Center(
+                                child: CircularProgressIndicator(strokeWidth: 2),
+                              ),
                             ),
                             errorWidget: (context, url, error) {
                               return Container(
@@ -254,13 +256,7 @@ class _RestaurantDetailsScreenState extends State<RestaurantDetailsScreen> {
                                         : (restaurant.mainImage != null ? 1 : 0)))) * 10.w / 2),
                       child: Row(
                         children:
-                            List.generate(restaurant.thumbnailImagesUrls.isNotEmpty 
-                                ? restaurant.thumbnailImagesUrls.length 
-                                : (restaurant.thumbnailImages.isNotEmpty 
-                                    ? restaurant.thumbnailImages.length 
-                                    : (restaurant.mainImageUrl != null && restaurant.mainImageUrl!.isNotEmpty 
-                                        ? 1 
-                                        : (restaurant.mainImage != null ? 1 : 0))), (index) {
+                            List.generate(_getImageCount(restaurant), (index) {
                           return Container(
                             margin: EdgeInsets.symmetric(horizontal: 2.w),
                             width: 7.w,
@@ -288,7 +284,7 @@ class _RestaurantDetailsScreenState extends State<RestaurantDetailsScreen> {
                           borderRadius: BorderRadius.circular(8.r),
                         ),
                         child: Text(
-                          '${_currentPage + 1}/${restaurant.thumbnailImagesUrls.isNotEmpty ? restaurant.thumbnailImagesUrls.length : (restaurant.thumbnailImages.isNotEmpty ? restaurant.thumbnailImages.length : (restaurant.mainImageUrl != null && restaurant.mainImageUrl!.isNotEmpty ? 1 : (restaurant.mainImage != null ? 1 : 0)))}',
+                          '${_currentPage + 1}/${_getImageCount(restaurant)}',
                           style:
                               TextStyle(color: Colors.white, fontSize: 12.sp),
                         ),
@@ -316,7 +312,7 @@ class _RestaurantDetailsScreenState extends State<RestaurantDetailsScreen> {
                                 ),
                                 SizedBox(width: 6.w),
                                 Text(
-                                  '${restaurant.priceRange} AED',
+                                  '${NumberFormatter.formatPrice(restaurant.priceRange ?? 0)}',
                                   style: TextStyle(
                                     fontWeight: FontWeight.bold,
                                     fontSize: 16.sp,
@@ -324,51 +320,38 @@ class _RestaurantDetailsScreenState extends State<RestaurantDetailsScreen> {
                                   ),
                                 ),
                                 Spacer(),
-                                Container(
-                                  padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
-                                  decoration: BoxDecoration(
-                                    color: restaurant.planType == 'premium' ? Colors.orange : Colors.blue,
-                                    borderRadius: BorderRadius.circular(12.r),
-                                  ),
-                                  child: Text(
-                                    restaurant.planType?.toUpperCase() ?? 'BASIC',
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 10.sp,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
+                               Text(
+                                  restaurant.createdAt?.split('T').first ?? '',
+                                  style: TextStyle(
+                                      color: Colors.grey, fontSize: 10.sp),
                                 ),
                               ],
                             ),
                             SizedBox(height: 4.h),
-                            Row(
-                              children: [
-                                Icon(Icons.access_time, size: 14.sp, color: Colors.grey),
-                                SizedBox(width: 4.w),
-                                Text(
-                                  restaurant.createdAt ?? '',
-                                  style: TextStyle(
-                                      color: Colors.grey, fontSize: 10.sp),
-                                ),
-                                Spacer(),
-                                Container(
-                                  padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
-                                  decoration: BoxDecoration(
-                                    color: Colors.green.shade100,
-                                    borderRadius: BorderRadius.circular(8.r),
-                                  ),
-                                  child: Text(
-                                    restaurant.category,
-                                    style: TextStyle(
-                                      color: Colors.green.shade700,
-                                      fontSize: 10.sp,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
+                            // Row(
+                            //   children: [
+                            //     Icon(Icons.access_time, size: 14.sp, color: Colors.grey),
+                            //     SizedBox(width: 4.w),
+                                
+                            //     Spacer(),
+                            //     Container(
+                            //       padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
+                            //       decoration: BoxDecoration(
+                            //         color: Colors.green.shade100,
+                            //         borderRadius: BorderRadius.circular(8.r),
+                            //       ),
+                            //       child: Text(
+                            //         restaurant.category,
+                            //         style: TextStyle(
+                            //           color: Colors.green.shade700,
+                            //           fontSize: 10.sp,
+                            //           fontWeight: FontWeight.w500,
+                            //         ),
+                            //       ),
+                            //     ),
+                            //   ],
+                            // ),
+                           
                             SizedBox(height: 6.h),
                             Text(
                               restaurant.title,
@@ -416,87 +399,87 @@ class _RestaurantDetailsScreenState extends State<RestaurantDetailsScreen> {
                             // ),
                             SizedBox(height: 6.h),
                             Text(
-                              restaurant.description,
+                              restaurant.category,
                               style: TextStyle(
                                 fontSize: 14.sp,
                                 color: KTextColor,
                                 fontWeight: FontWeight.w500,
                               ),
                             ),
-                            SizedBox(height: 6.h),
-                            Row(
-                              children: [
-                                SvgPicture.asset(
-                                  'assets/icons/locationicon.svg',
-                                  width: 20.w,
-                                  height: 18.h,
-                                ),
-                                SizedBox(width: 6.w),
-                                Expanded(
-                                  child: Text(
-                                    restaurant.area != null && restaurant.area!.isNotEmpty
-                                        ? '${restaurant.emirate}, ${restaurant.district}, ${restaurant.area}'
-                                        : '${restaurant.emirate}, ${restaurant.district}',
-                                    style: TextStyle(
-                                      fontSize: 14.sp,
-                                      color: KTextColor,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            SizedBox(height: 8.h),
+                            // SizedBox(height: 6.h),
+                            // Row(
+                            //   children: [
+                            //     SvgPicture.asset(
+                            //       'assets/icons/locationicon.svg',
+                            //       width: 20.w,
+                            //       height: 18.h,
+                            //     ),
+                            //     SizedBox(width: 6.w),
+                            //     Expanded(
+                            //       child: Text(
+                            //         restaurant.area != null && restaurant.area!.isNotEmpty
+                            //             ? '${restaurant.emirate}, ${restaurant.district}, ${restaurant.area}'
+                            //             : '${restaurant.emirate}, ${restaurant.district}',
+                            //         style: TextStyle(
+                            //           fontSize: 14.sp,
+                            //           color: KTextColor,
+                            //           fontWeight: FontWeight.w500,
+                            //         ),
+                            //       ),
+                            //     ),
+                            //   ],
+                            // ),
+                            // SizedBox(height: 8.h),
                             // معلومات المعلن
-                            Container(
-                              padding: EdgeInsets.all(12.w),
-                              decoration: BoxDecoration(
-                                color: Colors.grey.shade50,
-                                borderRadius: BorderRadius.circular(8.r),
-                                border: Border.all(color: Colors.grey.shade200),
-                              ),
-                              child: Row(
-                                children: [
-                                  Icon(Icons.person, color: Colors.grey.shade600, size: 20.sp),
-                                  SizedBox(width: 8.w),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          'المعلن',
-                                          style: TextStyle(
-                                            fontSize: 12.sp,
-                                            color: Colors.grey.shade600,
-                                            fontWeight: FontWeight.w500,
-                                          ),
-                                        ),
-                                        Text(
-                                          restaurant.advertiserName,
-                                          style: TextStyle(
-                                            fontSize: 14.sp,
-                                            color: KTextColor,
-                                            fontWeight: FontWeight.w600,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  if (restaurant.views > 0) ...[
-                                    Icon(Icons.visibility, color: Colors.grey.shade600, size: 16.sp),
-                                    SizedBox(width: 4.w),
-                                    Text(
-                                      '${restaurant.views}',
-                                      style: TextStyle(
-                                        fontSize: 12.sp,
-                                        color: Colors.grey.shade600,
-                                      ),
-                                    ),
-                                  ],
-                                ],
-                              ),
-                            ),
-                            SizedBox(height: 5.h),
+                            // Container(
+                            //   padding: EdgeInsets.all(12.w),
+                            //   decoration: BoxDecoration(
+                            //     color: Colors.grey.shade50,
+                            //     borderRadius: BorderRadius.circular(8.r),
+                            //     border: Border.all(color: Colors.grey.shade200),
+                            //   ),
+                            //   child: Row(
+                            //     children: [
+                            //       Icon(Icons.person, color: Colors.grey.shade600, size: 20.sp),
+                            //       SizedBox(width: 8.w),
+                            //       Expanded(
+                            //         child: Column(
+                            //           crossAxisAlignment: CrossAxisAlignment.start,
+                            //           children: [
+                            //             Text(
+                            //               'المعلن',
+                            //               style: TextStyle(
+                            //                 fontSize: 12.sp,
+                            //                 color: Colors.grey.shade600,
+                            //                 fontWeight: FontWeight.w500,
+                            //               ),
+                            //             ),
+                            //             Text(
+                            //               restaurant.advertiserName,
+                            //               style: TextStyle(
+                            //                 fontSize: 14.sp,
+                            //                 color: KTextColor,
+                            //                 fontWeight: FontWeight.w600,
+                            //               ),
+                            //             ),
+                            //           ],
+                            //         ),
+                            //       ),
+                            //       if (restaurant.views > 0) ...[
+                            //         Icon(Icons.visibility, color: Colors.grey.shade600, size: 16.sp),
+                            //         SizedBox(width: 4.w),
+                            //         Text(
+                            //           '${restaurant.views}',
+                            //           style: TextStyle(
+                            //             fontSize: 12.sp,
+                            //             color: Colors.grey.shade600,
+                            //           ),
+                            //         ),
+                            //       ],
+                            //     ],
+                            //   ),
+                            // ),
+                             SizedBox(height: 5.h),
                           ],
                         ),
                       ),
@@ -549,90 +532,41 @@ class _RestaurantDetailsScreenState extends State<RestaurantDetailsScreen> {
                       // ),
                       // SizedBox(height: 1.h),
                       Divider(color: Color(0xFFB5A9B1), thickness: 1.h),
-                      Text(
-                        S.of(context).description,
-                        style: TextStyle(
-                          fontSize: 16.sp,
-                          fontWeight: FontWeight.w600,
-                          color: KTextColor,
-                        ),
-                      ),
-                      SizedBox(height: 20.h),
-                      // Additional Info Section
-                      if (restaurant.status != null) ...[
-                        Container(
-                          padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
-                          decoration: BoxDecoration(
-                            color: restaurant.status == 'Valid' 
-                                ? Colors.green.withOpacity(0.1)
-                                : Colors.orange.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(8.r),
-                            border: Border.all(
-                              color: restaurant.status == 'Valid' 
-                                  ? Colors.green
-                                  : Colors.orange,
-                              width: 1,
-                            ),
+                       Text(S.of(context).description, style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.w600, color: KTextColor)),
+                SizedBox(height: 20.h),
+                Directionality(
+                  textDirection: TextDirection.ltr,
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: ReadMoreText(
+                          restaurant.description,
+                          trimLines: 5,
+                          colorClickableText: Color.fromARGB(255, 9, 37, 108),
+                          trimMode: TrimMode.Line,
+                          trimCollapsedText: 'Read more',
+                          lessStyle: TextStyle(
+                            fontSize: 15.sp,
+                            fontWeight: FontWeight.w600,
+                            color: Color.fromARGB(255, 9, 37, 108),
                           ),
-                          child: Text(
-                            'حالة الإعلان: ${restaurant.status}',
-                            style: TextStyle(
-                              fontSize: 12.sp,
-                              fontWeight: FontWeight.w600,
-                              color: restaurant.status == 'Valid' 
-                                  ? Colors.green[700]
-                                  : Colors.orange[700],
-                            ),
+                          trimExpandedText: '  Show less',
+                          style: TextStyle(
+                            fontSize: 14.sp,
+                            fontWeight: FontWeight.w500,
+                            color: KTextColor,
+                          ),
+                          moreStyle: TextStyle(
+                            fontSize: 15.sp,
+                            fontWeight: FontWeight.w600,
+                            color: Color.fromARGB(255, 9, 37, 108),
                           ),
                         ),
-                        SizedBox(height: 12.h),
-                      ],
-                      Directionality(
-                        textDirection: TextDirection.ltr,
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: ReadMoreText(
-                                restaurant.description.isNotEmpty 
-                                    ? restaurant.description 
-                                    : "لا يوجد وصف متاح لهذا المطعم",
-                                trimLines: 3,
-                                colorClickableText:
-                                    Color.fromARGB(255, 9, 37, 108),
-                                trimMode: TrimMode.Line,
-                                trimCollapsedText: ' اقرأ المزيد',
-                                lessStyle: TextStyle(
-                                  fontSize: 15.sp,
-                                  fontWeight: FontWeight.w600,
-                                  color: Color.fromARGB(255, 9, 37, 108),
-                                ),
-                                trimExpandedText: '  اقرأ أقل',
-                                style: TextStyle(
-                                  fontSize: 14.sp,
-                                  fontWeight: FontWeight.w500,
-                                  color: KTextColor,
-                                ),
-                                moreStyle: TextStyle(
-                                  fontSize: 15.sp,
-                                  fontWeight: FontWeight.w600,
-                                  color: Color.fromARGB(255, 9, 37, 108),
-                                ),
-                              ),
-                            )
-                            // Text(
-                            //   "20 % Down Payment With Insurance\n Registration And Delivery To \n Client Without Fees",
-                            //   textAlign: TextAlign.start,
-                            //   style:
-                            // TextStyle(
-                            //     fontSize: 14.sp,
-                            //     fontWeight: FontWeight.w500,
-                            //     color: KTextColor,
-                            //   ),
-                            // ),
-                          ],
-                        ),
-                      ),
-                      SizedBox(height: 50.h),
+                      )
+                    ],
+                  ),
+                ),
+                SizedBox(height: 50.h),
                       Divider(color: Color(0xFFB5A9B1), thickness: 1.h),
                       Text(
                         S.of(context).location,
@@ -728,7 +662,7 @@ class _RestaurantDetailsScreenState extends State<RestaurantDetailsScreen> {
                                 ),
                                 SizedBox(height: 2.h),
                                 Text(
-                                  restaurant.phoneNumber,
+                                  restaurant.advertiserName,
                                   style: TextStyle(
                                     fontSize: 14.sp,
                                     color: KTextColor,
@@ -738,7 +672,7 @@ class _RestaurantDetailsScreenState extends State<RestaurantDetailsScreen> {
                                 SizedBox(height: 3.h),
                                 GestureDetector(
                                   onTap: () {
-                                    context.push('/AllAddsRestaurant');
+                                   // context.push('/AllAddsRestaurant');
                                   },
                                   child: Text(
                                     S.of(context).view_all_ads,

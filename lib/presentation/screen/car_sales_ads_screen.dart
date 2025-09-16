@@ -531,7 +531,7 @@ class _CarSalesAdScreenState extends State<CarSalesAdScreen> {
     List<String> validationErrors = [];
     if (_titleController.text.trim().isEmpty) validationErrors.add(s.title);
     if (selectedMake == null) validationErrors.add(s.make);
-    if (selectedModel == null) validationErrors.add(s.model);
+    if (selectedModel == null || (selectedModel != "All" && selectedModel != "Other" && selectedModel!.trim().isEmpty)) validationErrors.add(s.model);
     if (_yearController.text.trim().isEmpty) validationErrors.add(s.year);
     if (_kilometersController.text.trim().isEmpty) validationErrors.add(s.km);
     if (_priceController.text.trim().isEmpty) validationErrors.add(s.price);
@@ -881,7 +881,7 @@ class _CarSalesAdScreenState extends State<CarSalesAdScreen> {
                       const SizedBox(height: 7),
                       _buildTitledTextFormField(
                           s.title, _titleController, borderColor, currentLocale,
-                          minLines: 2, maxLines: 3),
+                          minLines: 3, maxLines: 4),
                       const SizedBox(height: 7),
                       _buildFormRow([
                         Consumer<CarSalesInfoProvider>(
@@ -1182,7 +1182,7 @@ class _CarSalesAdScreenState extends State<CarSalesAdScreen> {
         controller: controller,
         minLines: minLines,
         maxLines: maxLines,
-        maxLength: maxLines > 1 ? 70 : null,
+        maxLength: maxLines > 1 ? 100 : null,
         style: const TextStyle(
             fontWeight: FontWeight.w500, color: KTextColor, fontSize: 12),
         textAlign: currentLocale == 'ar' ? TextAlign.right : TextAlign.left,

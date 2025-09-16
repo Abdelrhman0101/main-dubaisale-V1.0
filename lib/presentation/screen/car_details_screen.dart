@@ -126,16 +126,57 @@ class _CarDetailsScreenState extends State<CarDetailsScreen> {
               // حالة الخطأ
               if (provider.detailsError != null) {
                 return Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text('Error: ${provider.detailsError}'),
-                      SizedBox(height: 10),
-                      ElevatedButton(
-                        onPressed: () => provider.fetchAdDetails(widget.adId),
-                        child: Text("Retry"),
-                      )
-                    ],
+                  child: Padding(
+                    padding: const EdgeInsets.all(20.0),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.error_outline,
+                          size: 64,
+                          color: Colors.red,
+                        ),
+                        SizedBox(height: 16),
+                        Text(
+                          'خطأ في تحميل تفاصيل الإعلان',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        SizedBox(height: 8),
+                        Text(
+                          _getErrorMessage(provider.detailsError!),
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey[600],
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        SizedBox(height: 20),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            ElevatedButton.icon(
+                              onPressed: () => provider.fetchAdDetails(widget.adId),
+                              icon: Icon(Icons.refresh),
+                              label: Text("إعادة المحاولة"),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.blue,
+                                foregroundColor: Colors.white,
+                              ),
+                            ),
+                            SizedBox(width: 12),
+                            OutlinedButton.icon(
+                              onPressed: () => Navigator.of(context).pop(),
+                              icon: Icon(Icons.arrow_back),
+                              label: Text("العودة"),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
                 );
               }
@@ -151,6 +192,22 @@ class _CarDetailsScreenState extends State<CarDetailsScreen> {
         ),
       ),
     );
+  }
+
+  String _getErrorMessage(String error) {
+    if (error.contains('incrementViews')) {
+      return 'هذا الإعلان غير متاح حالياً. يرجى المحاولة لاحقاً أو اختيار إعلان آخر.';
+    } else if (error.contains('500')) {
+      return 'خطأ في الخادم. يرجى المحاولة لاحقاً.';
+    } else if (error.contains('404')) {
+      return 'الإعلان المطلوب غير موجود أو تم حذفه.';
+    } else if (error.contains('Token')) {
+      return 'انتهت صلاحية الجلسة. يرجى تسجيل الدخول مرة أخرى.';
+    } else if (error.contains('network') || error.contains('connection')) {
+      return 'تحقق من اتصال الإنترنت وحاول مرة أخرى.';
+    } else {
+      return 'حدث خطأ غير متوقع. يرجى المحاولة لاحقاً.';
+    }
   }
 
   Widget _buildAdDetails(BuildContext context, CarAdModel car) {
@@ -618,4 +675,5 @@ class _CarDetailsScreenState extends State<CarDetailsScreen> {
       ),
     );
   }
+
 }

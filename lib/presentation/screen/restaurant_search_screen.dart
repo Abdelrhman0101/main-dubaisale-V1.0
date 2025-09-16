@@ -227,19 +227,28 @@ class _RestaurantSearchScreenState extends State<RestaurantSearchScreen>
 
     final locale = Localizations.localeOf(context).languageCode;
     
-    return Consumer<RestaurantAdProvider>(
-      builder: (context, provider, child) {
-        final premiumStarAds = provider.restaurantAds.where((j) => j.priority == AdPriority.PremiumStar).toList();
-        final premiumAds = provider.restaurantAds.where((j) => j.priority == AdPriority.premium).toList();
-        final featuredAds = provider.restaurantAds.where((j) => j.priority == AdPriority.featured).toList();
-        final freeAds = provider.restaurantAds.where((j) => j.priority == AdPriority.free).toList();
-        final totalAds = provider.restaurantAds.length;
+    return PopScope(
+      canPop: false,
+      onPopInvoked: (didPop) {
+        if (!didPop) {
+          // مسح جميع الفلاتر قبل الرجوع
+          context.read<RestaurantAdProvider>().clearAllFilters();
+          context.pop();
+        }
+      },
+      child: Consumer<RestaurantAdProvider>(
+        builder: (context, provider, child) {
+          final premiumStarAds = provider.restaurantAds.where((j) => j.priority == AdPriority.PremiumStar).toList();
+          final premiumAds = provider.restaurantAds.where((j) => j.priority == AdPriority.premium).toList();
+          final featuredAds = provider.restaurantAds.where((j) => j.priority == AdPriority.featured).toList();
+          final freeAds = provider.restaurantAds.where((j) => j.priority == AdPriority.free).toList();
+          final totalAds = provider.restaurantAds.length;
 
-        return Directionality(
-          textDirection: locale == 'ar' ? TextDirection.rtl : TextDirection.ltr,
-          child: Scaffold(
-            backgroundColor: Colors.white,
-            body: SafeArea(
+          return Directionality(
+            textDirection: locale == 'ar' ? TextDirection.rtl : TextDirection.ltr,
+            child: Scaffold(
+              backgroundColor: Colors.white,
+              body: SafeArea(
               child: Stack(
                 children: [
                   if (provider.isLoadingAds)
@@ -294,7 +303,11 @@ class _RestaurantSearchScreenState extends State<RestaurantSearchScreen>
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 GestureDetector(
-                                  onTap: () => context.pop(),
+                                  onTap: () {
+                                    // مسح جميع الفلاتر قبل الرجوع
+                                    context.read<RestaurantAdProvider>().clearAllFilters();
+                                    context.pop();
+                                  },
                                   child: Padding(
                                     padding: const EdgeInsets.symmetric(horizontal: 5),
                                     child: Row(
@@ -402,7 +415,11 @@ class _RestaurantSearchScreenState extends State<RestaurantSearchScreen>
                          child: Column(
                            children: [
                              GestureDetector(
-                                onTap: () => context.pop(),
+                                onTap: () {
+                                  // مسح جميع الفلاتر قبل الرجوع
+                                  context.read<RestaurantAdProvider>().clearAllFilters();
+                                  context.pop();
+                                },
                                 child: Row(
                                   children: [
                                     Icon(Icons.arrow_back_ios, color: KTextColor, size: 17.sp),
@@ -464,7 +481,7 @@ class _RestaurantSearchScreenState extends State<RestaurantSearchScreen>
           ),
         );
       },
-    );
+    ));
   }
 
   Widget _buildAdList(String title, List<FavoriteItemInterface> items) {
@@ -557,14 +574,12 @@ class _RestaurantSearchScreenState extends State<RestaurantSearchScreen>
     );
   }
 
-  Future<void> _launchUrl(String url) async {
-    final uri = Uri.parse(url);
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri);
-    } else {
+  Future<void> _launchUrl(String urlString) async {
+    final Uri url = Uri.parse(urlString);
+    if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('لا يمكن فتح الرابط: $url')),
+          SnackBar(content: Text('Could not launch $urlString')),
         );
       }
     }

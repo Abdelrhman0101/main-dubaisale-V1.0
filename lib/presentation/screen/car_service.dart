@@ -182,7 +182,7 @@ class _CarServiceState extends State<CarService> {
                 itemBuilder: (context, index) {
                   final ad = garage.ads[index];
                   return GestureDetector(
-                    onTap: () { /* Future: context.push('/car-service-details/${ad.id}'); */ },
+                    onTap: () {/* Future: context.push('/car-service-details/${ad.id}');*/},
                     child: Padding(
                       padding: const EdgeInsetsDirectional.only(end: 4),
                       child: Container(
@@ -191,20 +191,16 @@ class _CarServiceState extends State<CarService> {
                         child: Column(children: [
                           ClipRRect(borderRadius: BorderRadius.circular(4.r), child: CachedNetworkImage(imageUrl: ImageUrlHelper.getMainImageUrl(ad.mainImage ?? ''), height: 94.h, width: double.infinity, fit: BoxFit.cover, placeholder: (context, url) => Container(color: Colors.grey[300], child: Center(child: CircularProgressIndicator(strokeWidth: 2))), errorWidget: (context, url, error) => Image.asset('assets/images/car.jpg', fit: BoxFit.cover))),
                           Expanded(child: Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 6),
+                              padding: const EdgeInsets.symmetric(horizontal: 0),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                                 children: [
-                                  Text("${NumberFormatter.formatPrice(ad.price)} AED", style: TextStyle(color: Colors.red, fontWeight: FontWeight.w600, fontSize: 11.5.sp)),
-                                  Text(ad.serviceName ?? 'Service', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 11.5.sp, color: KTextColor), maxLines: 2, overflow: TextOverflow.ellipsis),
-                                  Row(
-                                    children: [
-                                      Text(ad.serviceType ?? '', style: TextStyle(fontSize: 11.5.sp, color: const Color.fromRGBO(165, 164, 162, 1), fontWeight: FontWeight.w600)),
-                                      SizedBox(width: 8.w),
-                                      Text("${ad.district ?? ''}", style: TextStyle(fontSize: 11.5.sp, color: const Color.fromRGBO(165, 164, 162, 1), fontWeight: FontWeight.w600)),
-                                    ],
-                                  ),
+                                  Text("${NumberFormatter.formatPrice(ad.price)}", style: TextStyle(color: Colors.red, fontWeight: FontWeight.w600, fontSize: 11.5.sp)),
+                                  Text(ad.serviceName ?? '', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 11.5.sp, color: KTextColor), maxLines: 2, overflow: TextOverflow.ellipsis),
+                                 
+                                      Text("${ad.emirate ?? ''} ${ad.district ?? ''}", style: TextStyle(fontSize: 11.5.sp, color: const Color.fromRGBO(165, 164, 162, 1), fontWeight: FontWeight.w600)),
+                                   
                                 ],
                               ),
                             ),

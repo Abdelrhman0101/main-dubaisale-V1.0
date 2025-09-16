@@ -219,7 +219,14 @@ class CarAdProvider with ChangeNotifier {
         }
         // If "All" is selected (id: -1), we don't add any 'make' filter
     }
-    if (_selectedModel != null) finalFilters['model'] = _selectedModel!.name;
+    if (_selectedModel != null) {
+        if (_selectedModel!.id == -2) { // Other
+            finalFilters['model'] = "Other";
+        } else if (_selectedModel!.id > 0) { // Real Model
+            finalFilters['model'] = _selectedModel!.name;
+        }
+        // If "All" is selected (id: -1), we don't add any 'model' filter
+    }
     if (_selectedTrims.isNotEmpty) finalFilters['trim'] = _selectedTrims.map((e) => e.name).join(',');
     
     await fetchCarAds(filters: finalFilters);

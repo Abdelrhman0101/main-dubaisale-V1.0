@@ -468,7 +468,7 @@ class _CarServicesAdScreenState extends State<CarServicesAdScreen> {
                           ]),
                            const SizedBox(height: 7),
                           
-                          _buildTitledTextFormField(s.title, _titleController, borderColor, currentLocale, hintText: "Change Oil With Good Quality", minLines: 3, maxLines: 3, isRequired: true),
+                          _buildTitledTextFormField(s.title, _titleController, borderColor, currentLocale, hintText: "Change Oil With Good Quality", minLines: 3, maxLines: 4, isRequired: true),
                           const SizedBox(height: 7),
                           
                            Consumer<CarServicesInfoProvider>(
@@ -616,13 +616,14 @@ class _CarServicesAdScreenState extends State<CarServicesAdScreen> {
   Widget _buildFormRow(List<Widget> children) {
     return Row(crossAxisAlignment: CrossAxisAlignment.start, children: children.map((child) => Expanded(child: Padding(padding: const EdgeInsets.symmetric(horizontal: 4.0), child: child))).toList());
   }
-  Widget _buildTitledTextFormField(String title, TextEditingController controller, Color borderColor, String currentLocale, {bool isNumber = false, String? hintText, int minLines = 1, int? maxLines, bool isRequired = false}) {
+  Widget _buildTitledTextFormField(String title, TextEditingController controller, Color borderColor, String currentLocale, {bool isNumber = false, String? hintText, int minLines = 1, int maxLines =1, bool isRequired = false}) {
      return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       Text(title, style: TextStyle(fontWeight: FontWeight.w600, color: KTextColor, fontSize: 14.sp)), const SizedBox(height: 4),
         TextFormField(
             controller: controller,
-            minLines: minLines, 
-            maxLines: maxLines ?? (minLines > 1 ? minLines + 2 : 1),
+            minLines: minLines,
+        maxLines: maxLines,
+        maxLength: maxLines > 1 ? 90 : null,
             style: TextStyle(fontWeight: FontWeight.w500, color: KTextColor, fontSize: 12.sp),
             textAlign: currentLocale == 'ar' ? TextAlign.right : TextAlign.left,
             keyboardType: isNumber ? TextInputType.number : TextInputType.text,

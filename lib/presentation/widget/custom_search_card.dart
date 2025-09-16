@@ -3,6 +3,7 @@ import 'package:advertising_app/constant/image_url_helper.dart';
 import 'package:advertising_app/generated/l10n.dart';
 import 'package:advertising_app/data/model/ad_priority.dart';
 import 'package:advertising_app/data/model/favorite_item_interface_model.dart';
+import 'package:advertising_app/utils/number_formatter.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -189,7 +190,7 @@ class _SearchCardState extends State<SearchCard> {
                   children: [
                     SvgPicture.asset('assets/icons/priceicon.svg', width: 22.w, height: 18.h),
                     SizedBox(width: 8.w),
-                    Text(item.price, style: TextStyle(color: Colors.red, fontWeight: FontWeight.w700, fontSize: 16.sp)),
+                    Text(NumberFormatter.formatPrice(item.price), style: TextStyle(color: Colors.red, fontWeight: FontWeight.w700, fontSize: 16.sp)),
                     const Spacer(),
                     Text(item.date, style: TextStyle(color: Colors.grey, fontSize: 12.sp, fontWeight: FontWeight.w400)),
                   ],

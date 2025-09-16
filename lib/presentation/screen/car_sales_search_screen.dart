@@ -102,9 +102,18 @@ class _CarSalesScreenState extends State<CarSalesScreen> with AutomaticKeepAlive
         statusBarIconBrightness: Brightness.dark));
     final s = S.of(context);
     
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: SafeArea(
+    return PopScope(
+      canPop: false,
+      onPopInvoked: (didPop) {
+        if (!didPop) {
+          // مسح جميع الفلاتر قبل الرجوع
+          context.read<CarAdProvider>().clearAllFilters();
+          context.pop();
+        }
+      },
+      child: Scaffold(
+        backgroundColor: Colors.white,
+        body: SafeArea(
         child: Consumer<CarAdProvider>(
           builder: (context, provider, child) {
             // ترتيب الإعلانات من الأحدث للأقدم
@@ -268,7 +277,7 @@ class _CarSalesScreenState extends State<CarSalesScreen> with AutomaticKeepAlive
           },
         ),
       ),
-    );
+    ));
   }
 
   Widget _buildSortBar(S s, int totalAds) {
@@ -407,9 +416,9 @@ class _CarSalesScreenState extends State<CarSalesScreen> with AutomaticKeepAlive
               }),
              
             ],
-        ),
       ),
-    );
+    ),
+      );
 
     
   }
@@ -459,6 +468,7 @@ class _CarSalesScreenState extends State<CarSalesScreen> with AutomaticKeepAlive
         ],
       ),
     );
+
   }
 }
 
@@ -489,7 +499,7 @@ class AdCardItemAdapter implements FavoriteItemInterface {
   @override List<String> get images => [ ImageUrlHelper.getMainImageUrl(_ad.mainImage), ...ImageUrlHelper.getThumbnailImageUrls(_ad.thumbnailImages) ].where((img) => img.isNotEmpty).toList();
   @override String get line1 => "Year: ${_ad.year}  Km: ${NumberFormatter.formatKilometers(_ad.km)}   Specs: ${_ad.specs ?? ''}" ;
   @override String get line2 => _ad.title;
-  @override String get price => "${NumberFormatter.formatPrice(_ad.price)} ";
+  @override String get price => _ad.price;
   @override String get location =>"${ _ad.emirate}  ${_ad.area}";
   @override String get title => "${_ad.make} ${_ad.model} ${_ad.trim ?? ''}".trim();
   @override String get date => _ad.createdAt?.split('T').first ?? '';

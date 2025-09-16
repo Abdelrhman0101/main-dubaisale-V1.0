@@ -31,6 +31,7 @@ class _CarServiceOfferBoxState extends State<CarServiceOfferBox> {
   List<String> _selectedDistricts = [];
   String? _priceFrom, _priceTo;
   Timer? _debounce;
+  bool _sortByDateEnabled = false;
 
   @override
   void initState() {
@@ -267,8 +268,12 @@ class _CarServiceOfferBoxState extends State<CarServiceOfferBox> {
                                       child: Transform.scale(
                                         scale: 0.8,
                                         child: Switch(
-                                          value: true,
-                                          onChanged: (val) {},
+                                          value: _sortByDateEnabled,
+                                          onChanged: (val) {
+                                            setState(() {
+                                              _sortByDateEnabled = val;
+                                            });
+                                          },
                                           activeColor: Colors.white,
                                           activeTrackColor:
                                               const Color.fromRGBO(8, 194, 201, 1),
@@ -414,7 +419,7 @@ class _CarServiceOfferBoxState extends State<CarServiceOfferBox> {
                                           MainAxisAlignment.spaceEvenly,
                                       children: [
                                         Text(
-                                          '${car.price ?? 0} AED',
+                                          '${car.price} AED',
                                           style: TextStyle(
                                             color: Colors.red,
                                             fontWeight: FontWeight.w600,
@@ -451,7 +456,7 @@ class _CarServiceOfferBoxState extends State<CarServiceOfferBox> {
                                             SizedBox(width: 5),
                                             Expanded(
                                               child: Text(
-                                               "${ car.district ?? 'غير محدد'} ${car.district}",
+                                               "${ car.emirate ?? 'غير محدد'} ${car.district}",
                                                 style: TextStyle(
                                                   fontSize: 12.sp,
                                                   color: Color.fromRGBO(
