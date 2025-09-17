@@ -114,6 +114,30 @@ class _RestaurantDetailsScreenState extends State<RestaurantDetailsScreen> {
 
         final restaurant = provider.adDetails!;
 
+        // Debug prints for image sources
+        print('RD> mainImageUrl: ${restaurant.mainImageUrl}');
+        print('RD> mainImage (relative): ${restaurant.mainImage}');
+        print('RD> thumbnailImagesUrls (absolute): ${restaurant.thumbnailImagesUrls}');
+        print('RD> thumbnailImages (relative): ${restaurant.thumbnailImages}');
+
+        // جمع الصور بنفس منهجية صفحة السيرش + توحيد الروابط عبر ImageUrlHelper
+        final List<String> sliderImages = (() {
+          final imgs = <String>[];
+          // الصورة الرئيسية أولاً
+          if (restaurant.mainImageUrl != null && restaurant.mainImageUrl!.isNotEmpty) {
+            imgs.add(ImageUrlHelper.getFullImageUrl(restaurant.mainImageUrl!));
+          } else if (restaurant.mainImage != null && restaurant.mainImage!.isNotEmpty) {
+            imgs.add(ImageUrlHelper.getFullImageUrl(restaurant.mainImage!));
+          }
+          // الصور المصغرة
+          if (restaurant.thumbnailImagesUrls.isNotEmpty) {
+            imgs.addAll(ImageUrlHelper.getFullImageUrls(restaurant.thumbnailImagesUrls));
+          } else if (restaurant.thumbnailImages.isNotEmpty) {
+            imgs.addAll(ImageUrlHelper.getThumbnailImageUrls(restaurant.thumbnailImages));
+          }
+          return imgs.where((e) => e.isNotEmpty).toList();
+        })();
+
         return Directionality(
       textDirection: isArabic ? TextDirection.rtl : TextDirection.ltr,
       child: SafeArea(
@@ -133,27 +157,11 @@ class _RestaurantDetailsScreenState extends State<RestaurantDetailsScreen> {
                       width: double.infinity,
                       child: PageView.builder(
                         controller: _pageController,
-                        itemCount: _getImageCount(restaurant),
+                        itemCount: sliderImages.length,
                         onPageChanged: (index) =>
                             setState(() => _currentPage = index),
                         itemBuilder: (context, index) {
-                          String? imageUrl;
-                          
-                          // تحديد مصدر الصور بترتيب الأولوية
-                          if (restaurant.thumbnailImagesUrls.isNotEmpty && index < restaurant.thumbnailImagesUrls.length) {
-                            imageUrl = restaurant.thumbnailImagesUrls[index];
-                          } else if (restaurant.thumbnailImages.isNotEmpty && index < restaurant.thumbnailImages.length) {
-                            imageUrl = ImageUrlHelper.getFullImageUrl(restaurant.thumbnailImages[index]);
-                          } else if (index == 0) {
-                            // للصورة الأولى فقط، استخدم الصورة الرئيسية
-                            if (restaurant.mainImageUrl != null && restaurant.mainImageUrl!.isNotEmpty) {
-                              imageUrl = restaurant.mainImageUrl!;
-                            } else if (restaurant.mainImage != null && restaurant.mainImage!.isNotEmpty) {
-                              imageUrl = ImageUrlHelper.getFullImageUrl(restaurant.mainImage!);
-                            }
-                          }
-                          
-                          if (imageUrl == null || imageUrl.isEmpty) {
+                          if (sliderImages.isEmpty) {
                             return Container(
                               color: Colors.grey[300],
                               child: const Icon(
@@ -163,6 +171,10 @@ class _RestaurantDetailsScreenState extends State<RestaurantDetailsScreen> {
                               ),
                             );
                           }
+                          final imageUrl = sliderImages[index];
+
+                          // Debug print for the resolved image URL used in the slider
+                          print('RD> resolved image[' + index.toString() + ']: ' + imageUrl);
                           
                           return CachedNetworkImage(
                             imageUrl: imageUrl,
@@ -175,6 +187,8 @@ class _RestaurantDetailsScreenState extends State<RestaurantDetailsScreen> {
                               ),
                             ),
                             errorWidget: (context, url, error) {
+                              // Debug print when image loading fails
+                              print('RD> error loading ' + url + ': ' + error.toString());
                               return Container(
                                 color: Colors.grey[300],
                                 child: const Icon(
@@ -247,16 +261,10 @@ class _RestaurantDetailsScreenState extends State<RestaurantDetailsScreen> {
                     Positioned(
                       bottom: 12.h,
                       left: MediaQuery.of(context).size.width / 2 -
-                            ((restaurant.thumbnailImagesUrls.isNotEmpty 
-                                ? restaurant.thumbnailImagesUrls.length 
-                                : (restaurant.thumbnailImages.isNotEmpty 
-                                    ? restaurant.thumbnailImages.length 
-                                    : (restaurant.mainImageUrl != null && restaurant.mainImageUrl!.isNotEmpty 
-                                        ? 1 
-                                        : (restaurant.mainImage != null ? 1 : 0)))) * 10.w / 2),
+                            ((sliderImages.length) * 10.w / 2),
                       child: Row(
                         children:
-                            List.generate(_getImageCount(restaurant), (index) {
+                            List.generate(sliderImages.length, (index) {
                           return Container(
                             margin: EdgeInsets.symmetric(horizontal: 2.w),
                             width: 7.w,
@@ -284,7 +292,9 @@ class _RestaurantDetailsScreenState extends State<RestaurantDetailsScreen> {
                           borderRadius: BorderRadius.circular(8.r),
                         ),
                         child: Text(
-                          '${_currentPage + 1}/${_getImageCount(restaurant)}',
+                          sliderImages.isEmpty
+                              ? '0/0'
+                              : '${_currentPage + 1}/${sliderImages.length}',
                           style:
                               TextStyle(color: Colors.white, fontSize: 12.sp),
                         ),

@@ -3,18 +3,24 @@ class ImageUrlHelper {
   static const String _baseUrl = 'https://dubaisale.app';
 
   /// تحويل مسار الصورة النسبي إلى URL كامل
-  /// مثال: "cars/main/image.jpg" -> "http://192.168.1.7:8000/storage/cars/main/image.jpg"
+  /// مثال: "cars/main/image.jpg" -> "https://dubaisale.app/storage/cars/main/image.jpg"
   static String getFullImageUrl(String? imagePath) {
     if (imagePath == null || imagePath.isEmpty) {
       return '';
     }
-    
+
     // إذا كان المسار يحتوي بالفعل على http أو https، فهو URL كامل
     if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
       return imagePath;
     }
-    
-    // إضافة baseUrl + /storage/ + مسار الصورة
+
+    // إذا بدأ المسار بشرطة مائلة "/" (مثل "/storage/..." أو "/images/..."),
+    // نضيف الدومين مباشرة بدون إضافة "/storage" مرة أخرى
+    if (imagePath.startsWith('/')) {
+      return '$_baseUrl$imagePath';
+    }
+
+    // الحالات الأخرى (مسارات نسبية لا تبدأ بـ "/") نضيف "/storage/" كالمعتاد
     return '$_baseUrl/storage/$imagePath';
   }
 
@@ -23,7 +29,7 @@ class ImageUrlHelper {
     if (imagePaths == null || imagePaths.isEmpty) {
       return [];
     }
-    
+
     return imagePaths.map((path) => getFullImageUrl(path)).toList();
   }
 

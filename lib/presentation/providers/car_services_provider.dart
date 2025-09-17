@@ -166,8 +166,8 @@ Future<void> fetchAds({Map<String, String>? filters}) async {
   
   /// تحديث نطاق السعر وتطبيق الفلتر محلياً
   void updatePriceRange(String? from, String? to) {
-    priceFrom = from;
-    priceTo = to;
+    priceFrom = (from == null || from.isEmpty) ? null : from.replaceAll(RegExp(r'[^0-9.]'), '');
+    priceTo = (to == null || to.isEmpty) ? null : to.replaceAll(RegExp(r'[^0-9.]'), '');
     _performLocalFilter();
   }
   

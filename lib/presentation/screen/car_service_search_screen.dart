@@ -13,11 +13,11 @@ import 'package:provider/provider.dart';
 import 'package:advertising_app/data/model/car_service_ad_model.dart';
 import 'package:advertising_app/presentation/providers/car_services_provider.dart';
 import 'package:advertising_app/presentation/providers/car_services_info_provider.dart';
-import 'package:advertising_app/utils/number_formatter.dart';
 import 'package:advertising_app/constant/image_url_helper.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:advertising_app/utils/phone_number_formatter.dart';
+import 'package:advertising_app/utils/number_formatter.dart';
 
 // تعريف الثوابت المستخدمة في الألوان
 const Color KTextColor = Color.fromRGBO(0, 30, 91, 1);
@@ -53,7 +53,7 @@ class CarServiceAdCardAdapter implements FavoriteItemInterface {
   }
   @override String get line1 => _ad.title;
   @override String get line2 => _ad.title;
-  @override String get price => "${NumberFormatter.formatPrice(_ad.price)}";
+  @override String get price => _ad.price;
   @override String get location => "${_ad.emirate} ${_ad.district} / ${_ad.area} ";
   @override String get title => _ad.serviceName;
   @override String get date => _ad.createdAt?.split('T').first ?? '';
@@ -97,10 +97,6 @@ class _CarServiceSearchScreenState extends State<CarServiceSearchScreen> with Au
     super.initState();
     _scrollController.addListener(_handleScroll);
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      print('=== INIT STATE DEBUG ===');
-      print('Initial filters from widget: ${widget.initialFilters}');
-      print('========================');
-      
       // التأكد من توفر بيانات الإمارات والمناطق
       final infoProvider = context.read<CarServicesInfoProvider>();
       if (infoProvider.emirateDisplayNames.isEmpty) {
@@ -160,10 +156,6 @@ class _CarServiceSearchScreenState extends State<CarServiceSearchScreen> with Au
       filters['district'] = _selectedDistricts.join(',');
     }
     // فلتر السعر يتم تطبيقه محلياً في CarServicesProvider
-    
-    print('=== FINAL FILTERS DEBUG ===');
-    print('Final filters being applied: $filters');
-    print('============================');
     
     context.read<CarServicesProvider>().applyAndFetchAds(initialFilters: filters);
   }
@@ -556,7 +548,9 @@ Widget _buildMultiSelectField(BuildContext context, String title, List<String> s
 
 Widget _buildRangePickerField(BuildContext context, {required String title, String? fromValue, String? toValue, required String unit, required VoidCallback onTap, bool isFilter = true}) {
     final s = S.of(context);
-    String displayText = (fromValue == null || fromValue.isEmpty) && (toValue == null || toValue.isEmpty) ? title : '${fromValue ?? s.from} - ${toValue ?? s.to} $unit'.trim();
+    final from = (fromValue != null && fromValue.isNotEmpty) ? NumberFormatter.formatNumber(fromValue) : s.from;
+    final to = (toValue != null && toValue.isNotEmpty) ? NumberFormatter.formatNumber(toValue) : s.to;
+    String displayText = (fromValue == null || fromValue.isEmpty) && (toValue == null || toValue.isEmpty) ? title : '$from - $to $unit'.trim();
     return GestureDetector(
       onTap: onTap,
       child: Container(

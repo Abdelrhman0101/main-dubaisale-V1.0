@@ -115,12 +115,7 @@ class _CarServiceState extends State<CarService> {
                                 }
                                 
                                 final filters = provider.getFormattedFilters();
-                                print('=== NAVIGATION FILTERS DEBUG ===');
-                                print('Filters from main page: $filters');
-                                print('Selected Emirate: ${provider.selectedEmirate}');
-                                print('Selected Service Type: ${provider.selectedServiceType}');
-                                print('================================');
-                                
+                               
                                 // إرسال الفلاتر إلى صفحة البحث
                                 context.push('/car_service_search', extra: filters);
                               },
